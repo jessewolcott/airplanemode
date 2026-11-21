@@ -1,0 +1,60 @@
+# The app contract
+
+What an app has to do to run on AirplaneMode. If an app follows this, adding it to the
+box is three small edits in this repo and nothing else.
+
+## Must
+
+1. **One repo, one container image**, published to
+   `ghcr.io/jessewolcott/airplanemode-<id>` for `linux/arm64` (and `linux/amd64` for laptops).
+   Released versions are semver tags (`v0.1.0` publishes `:0.1.0`). The platform pins exact
+   versions, never `latest` or `main`.
+2. **One HTTP port inside the container.** It isn't published to the host: the proxy reaches
+   it on the internal `airplanemode` network as `http://<id>:<port>`.
+3. **Works under a path prefix.** The proxy serves the app at `/<id>/` and strips the prefix,
+   so the app sees `/` as usual. The page must use **relative** URLs (`api/turn`, not
+   `/api/turn`) so the browser keeps the prefix.
+4. **Fully offline.** No CDNs, web fonts, analytics or outside APIs at runtime. Bundle every
+   asset in the image.
+5. **Works without the model.** The shared model is optional (it doesn't exist on the GL.iNet
+   profile, and it can be busy or still loading). With `LLM_URL` empty or unreachable, the app
+   must still be usable, in a plainer mode.
+6. **Stays inside its memory limit.** Declare it in `app.yaml`; the platform enforces it with
+   `mem_limit`. Aim for 256 MB or less.
+7. **Small writes only.** Treat the root filesystem as disposable. If the app keeps data,
+   use one named volume and keep it small; the box stores to eMMC or SD cards.
+8. **Ships an `app.yaml`** at the repo root:
+
+   ```yaml
+   id: darklight
+   name: The Dark Light
+   description: One sentence for the portal.
+   image: ghcr.io/jessewolcott/airplanemode-darklight
+   port: 8000
+   path: /darklight/
+   memory: 256m
+   needs:
+     llm: optional        # optional | none
+   env:
+     LLM_URL: what it's for
+   ```
+
+9. **Runs its own tests in CI** before publishing the image.
+
+## Using the shared model
+
+- `LLM_URL` points at llama.cpp's OpenAI-compatible API (`/v1/chat/completions`,
+  `/v1/models`, `/health`). Use `response_format` with a JSON schema whenever you need
+  structured output; the server enforces it with a grammar.
+- The model is shared and slow (single-digit to low-double-digit tokens per second on the
+  R6S). Keep prompts short, set `max_tokens` tight, send `cache_prompt: true`, and never
+  call it in a loop the user is waiting on without a fallback.
+- Validate what comes back. Small models are confidently wrong; the app owns the truth.
+
+## Adding the app to the box (in this repo)
+
+- `compose.yaml`: a service named `<id>` with the pinned image, `LLM_URL: ${LLM_URL-http://llm:8080}`
+  if it uses the model, and `mem_limit: ${<ID>_MEM:-256m}`.
+- `Caddyfile`: `redir /<id> /<id>/` and a `handle_path /<id>/*` block.
+- `portal/apps.json`: name, description, path, `uses_llm`.
+- Memory settings for the new app in each `hardware/*.env`.

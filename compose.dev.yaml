@@ -1,0 +1,8 @@
+# Local development: build apps from sibling checkouts instead of pulling released images.
+#   docker compose -f compose.yaml -f compose.dev.yaml up -d --build
+# Expects the app repos next to this one, e.g. ../airplanemode-darklight
+
+services:
+  darklight:
+    image: airplanemode-darklight:dev
+    build: ../airplanemode-darklight

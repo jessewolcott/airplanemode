@@ -1,0 +1,21 @@
+# Plain HTTP on the LAN: there is no public name to get a certificate for, and the box is offline.
+{
+	auto_https off
+	admin off
+}
+
+:80 {
+	encode gzip
+
+	# ---- apps: one block per app. The prefix is stripped before the app sees the request. ----
+	redir /darklight /darklight/
+	handle_path /darklight/* {
+		reverse_proxy darklight:8000
+	}
+
+	# ---- portal ----
+	handle {
+		root * /srv/portal
+		file_server
+	}
+}

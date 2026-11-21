@@ -1,0 +1,61 @@
+# AirplaneMode: the whole box in one file.
+# Pick a hardware profile first:  cp hardware/nanopi-r6s.env .env   (or hardware/glinet.env)
+# Then:                           docker compose up -d
+#
+# App images are pinned to exact versions. To update an app, change its tag here and commit.
+
+name: airplanemode
+
+services:
+  # Front door: the portal page plus one path per app (see Caddyfile).
+  proxy:
+    image: caddy:2.8-alpine
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./portal:/srv/portal:ro
+      - caddy-data:/data
+    mem_limit: ${PROXY_MEM:-64m}
+    restart: unless-stopped
+
+  # Shared language model. Only runs when COMPOSE_PROFILES includes "llm" (NanoPi R6S profile).
+  # Not published outside the box: apps reach it at http://llm:8080 on the internal network.
+  llm:
+    image: ghcr.io/ggml-org/llama.cpp:server-b12602
+    profiles: ["llm"]
+    command:
+      - "-hf"
+      - "${LLM_MODEL:-Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M}"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8080"
+      - "-t"
+      - "${LLM_THREADS:-4}"
+      - "-np"
+      - "${LLM_SLOTS:-2}"
+      - "-c"
+      - "${LLM_CTX:-4096}"
+    environment:
+      LLAMA_CACHE: /models
+    volumes:
+      - models:/models
+    mem_limit: ${LLM_MEM:-3g}
+    restart: unless-stopped
+
+  # ---- apps ----
+  darklight:
+    image: ghcr.io/jessewolcott/airplanemode-darklight:0.1.0
+    environment:
+      LLM_URL: ${LLM_URL-http://llm:8080}
+    mem_limit: ${DARKLIGHT_MEM:-256m}
+    restart: unless-stopped
+
+networks:
+  default:
+    name: airplanemode
+
+volumes:
+  models:
+  caddy-data:

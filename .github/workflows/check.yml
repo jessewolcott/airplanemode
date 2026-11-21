@@ -1,0 +1,31 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        hardware: [nanopi-r6s, glinet]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compose file is valid for ${{ matrix.hardware }}
+        run: |
+          cp hardware/${{ matrix.hardware }}.env .env
+          docker compose config --quiet
+          docker compose config --services
+      - name: Every portal app has a proxy route
+        run: |
+          for path in $(jq -r '.[].path' portal/apps.json); do
+            name=$(echo "$path" | tr -d /)
+            grep -q "handle_path /$name/\*" Caddyfile || { echo "Caddyfile has no route for $path"; exit 1; }
+            grep -qE "^  $name:" compose.yaml || { echo "compose.yaml has no service $name"; exit 1; }
+          done
+      - name: Pinned images have arm64 builds
+        run: |
+          for img in $(docker compose --profile llm config --images); do
+            docker manifest inspect "$img" | grep -q '"arm64"' || { echo "$img has no arm64 image"; exit 1; }
+          done

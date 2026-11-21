@@ -1,0 +1,9 @@
+[
+  {
+    "id": "darklight",
+    "name": "The Dark Light",
+    "description": "A storm, a dark lighthouse, a ship heading for the rocks. A text adventure with five endings, narrated by the on-board model.",
+    "path": "/darklight/",
+    "uses_llm": true
+  }
+]

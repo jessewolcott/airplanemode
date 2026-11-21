@@ -1,6 +1,6 @@
 # 0006. Control the router through its own API (ubus), not a privileged container
 
-Date: 2026-11-21 · Status: accepted
+Date: 2026-11-21 · Status: accepted; the root login is replaced by a Wi-Fi-only login in [0008](0008-least-privilege-router-login.md)
 
 ## Context
 

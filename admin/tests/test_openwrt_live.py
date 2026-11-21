@@ -17,8 +17,10 @@ from router import UPSTREAM_NET, UPSTREAM_SECTION, OpenWrtRouter, RouterError  #
 
 
 async def main():
+    user = os.environ.get("ROUTER_USER", "root")
     async with httpx.AsyncClient() as client:
-        r = OpenWrtRouter(os.environ["ROUTER_URL"], "root", os.environ["ROUTER_PASSWORD"], client)
+        r = OpenWrtRouter(os.environ["ROUTER_URL"], user, os.environ["ROUTER_PASSWORD"], client)
+        print(f"--   logging in as {user!r}")
 
         async def uci(config):
             return (await r.call("uci", "get", {"config": config}))["values"]
@@ -29,7 +31,7 @@ async def main():
         print("ok   overview reads radios + hotspots")
 
         # bad login is reported, not crashed on
-        bad = OpenWrtRouter(os.environ["ROUTER_URL"], "root", "wrong", client)
+        bad = OpenWrtRouter(os.environ["ROUTER_URL"], user, "wrong", client)
         try:
             await bad.overview()
             raise AssertionError("wrong password accepted")
@@ -90,7 +92,7 @@ async def main():
         print("ok   add / disable / delete hotspot; last-hotspot lockout guard holds")
 
         # changes are committed to disk, not just staged in the session
-        r2 = OpenWrtRouter(os.environ["ROUTER_URL"], "root", os.environ["ROUTER_PASSWORD"], client)
+        r2 = OpenWrtRouter(os.environ["ROUTER_URL"], user, os.environ["ROUTER_PASSWORD"], client)
         assert (await r2.overview())["hotspots"][0]["ssid"] in ("AirplaneMode", "AirplaneMode-Open")
         print("ok   changes are committed (visible from a fresh session)")
 
@@ -99,6 +101,26 @@ async def main():
             print("note scan returned results (unexpected without real radios)")
         except RouterError as e:
             print("ok   scan without real radios fails cleanly ->", e)
+
+        if user != "root":
+            # the restricted login must be refused everything outside Wi-Fi settings
+            denied = [
+                ("file", "exec", {"command": "/bin/sh", "params": ["-c", "id"]}),
+                ("file", "read", {"path": "/etc/shadow"}),
+                ("uci", "get", {"config": "system"}),
+                ("uci", "get", {"config": "rpcd"}),
+                ("uci", "set", {"config": "dropbear", "section": "main", "values": {"PasswordAuth": "on"}}),
+                ("uci", "set", {"config": "system", "section": "@system[0]", "values": {"hostname": "pwned"}}),
+                ("system", "board", {}),
+                ("rc", "init", {"name": "dropbear", "action": "stop"}),
+            ]
+            for obj, method, args in denied:
+                try:
+                    await r.call(obj, method, args, timeout=5)
+                    raise AssertionError(f"restricted login was ALLOWED {obj}.{method} {args}")
+                except RouterError:
+                    pass
+            print(f"ok   restricted login is refused {len(denied)} out-of-scope calls (shell, files, system, rpcd, dropbear, rc)")
 
 
 if __name__ == "__main__":

@@ -86,6 +86,7 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
 | Landing page, app menu, sign-in flow, admin panel | tested end to end in the browser against the mock router |
 | Admin API (auth, validation, lockout guard, captive flow) | automated tests, run in CI |
 | Router control (join, MAC clone, firewall, hotspots) | tested against a real OpenWrt 24.10 API in Docker (`admin/tests/test_openwrt_live.py`) |
+| Limited router login (`scripts/router-user.sh`) | tested on real OpenWrt 24.10: every admin feature works, and 8 out-of-scope calls are refused |
 | Live link status, scanning, reloading Wi-Fi on real radios | **needs a real device:** see the checklist in [docs/testing.md](docs/testing.md) |
 | Full stack with the 1.5B model | tested on a PC with Docker Desktop; speed on the R6S not yet measured |
 
@@ -95,8 +96,8 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
    FriendlyWrt is OpenWrt with Docker included.
 2. **Plug in both Wi-Fi adapters**, then check that two radios show up in the router's admin
    page (LuCI → Network → Wireless).
-3. **Set a root password** in LuCI (System → Administration). The admin panel uses it to
-   change Wi-Fi settings.
+3. **Set a root password** in LuCI (System → Administration), if you haven't already. It
+   stays yours: AirplaneMode gets its own, more limited login in step 5.
 4. **Get the box online once,** by Ethernet or by joining a Wi-Fi network in LuCI. Setup
    downloads about 1.5 GB of images and model files.
 5. **Install AirplaneMode** from the router's shell (SSH in as root):
@@ -105,13 +106,15 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
    git clone https://github.com/jessewolcott/airplanemode.git /opt/airplanemode
    cd /opt/airplanemode
    cp hardware/nanopi-r6s.env .env           # or hardware/glinet.env
-   echo "ROUTER_PASSWORD=<the root password from step 3>" >> .env
    # if your LAN isn't the default subnet, also fix LAN_IP in .env
+   sh scripts/router-user.sh                 # creates the Wi-Fi-only router login
    sh scripts/update.sh
    ```
 
-   On the first run, `update.sh` generates an **admin password**, prints it and saves it in
-   `.env`. Write it down.
+   `router-user.sh` creates a router login called `airplanemode` that can change Wi-Fi
+   settings and nothing else, and saves its random password in `.env`. Run it again any
+   time to rotate that password. On the first run, `update.sh` generates an **admin
+   password** for the admin panel, prints it and saves it in `.env`. Write it down.
 6. **Give the box a friendly name,** `airplane.mode`, in the router's DNS
    ([docs/hardware.md](docs/hardware.md#the-airplanemode-name-both-devices)).
 7. **Open `http://airplane.mode:8080/admin/`**, sign in, and rename your hotspot and set its
@@ -157,6 +160,8 @@ portal/               landing page + apps.json (the app menu)
 admin/                admin service: status, captive-portal check, Wi-Fi control, admin UI
 hardware/*.env        per-device settings (copy one to .env, then add your secrets)
 scripts/update.sh     pull, build, start, pre-download the model while online
+scripts/router-user.sh  create/rotate the Wi-Fi-only router login (run once, as root)
+router/               the access list for that login
 docs/app-contract.md  what an app must do to plug in
 docs/hardware.md      device setup details and caveats
 docs/testing.md       how to test, and the on-device checklist
@@ -177,9 +182,14 @@ docs/decisions/       why things are the way they are
   bypass OpenWrt's, so this binding is what keeps it off the hotel network. The model and
   the apps aren't reachable directly. Check this on your device (see
   [docs/testing.md](docs/testing.md)).
-- `.env` holds the admin password and the router's root password. It's created with mode
-  600 and ignored by git. Anyone who can sign in to the admin panel can change your Wi-Fi
-  settings, so pick a real password for your hotspot.
+- The admin service never uses the router's root login. It signs in as `airplanemode`,
+  whose access list ([router/rpcd-acl-airplanemode.json](router/rpcd-acl-airplanemode.json))
+  covers only the wireless, network and firewall settings, Wi-Fi status, and applying
+  changes. It can't run commands, read files, or touch system settings, SSH or passwords.
+  This is tested against real OpenWrt ([decision 0008](docs/decisions/0008-least-privilege-router-login.md)).
+- `.env` holds the admin password and that limited router password. It's mode 600 and
+  ignored by git. Anyone who can sign in to the admin panel can change your Wi-Fi settings,
+  so pick a real password for your hotspot.
 - The admin panel uses an HttpOnly, same-site session cookie and a custom request header
   against cross-site requests, and slows down wrong-password attempts.
 - It's plain HTTP on your own LAN: there's no public name to get a certificate for. See

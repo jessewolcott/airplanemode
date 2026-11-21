@@ -23,14 +23,15 @@ services:
 
   # Landing-page status, captive-portal check, and the admin panel (Wi-Fi settings).
   # Built from this repo. It changes router settings through the router's own ubus API,
-  # so it needs no privileges, just the router's address and a login (see .env).
+  # so it needs no privileges, just the router's address and a Wi-Fi-only login that
+  # scripts/router-user.sh creates (see .env).
   admin:
     build: ./admin
     image: airplanemode-admin:local
     environment:
       ROUTER_BACKEND: ${ROUTER_BACKEND:-openwrt}
       ROUTER_URL: ${ROUTER_URL:-http://host.docker.internal/ubus}
-      ROUTER_USER: ${ROUTER_USER:-root}
+      ROUTER_USER: ${ROUTER_USER:-airplanemode}
       ROUTER_PASSWORD: ${ROUTER_PASSWORD:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     extra_hosts:

@@ -49,6 +49,21 @@ docker compose build admin
 docker run --rm --network airplanemode -v "$PWD/admin:/app:ro" \
   -e ROUTER_URL=http://owrt-test/ubus -e ROUTER_PASSWORD=testpw \
   airplanemode-admin:local python tests/test_openwrt_live.py
+```
+
+To test the **restricted login** too, install it the way a real router would, then run the
+same test as that user. It adds checks that out-of-scope calls are refused:
+
+```sh
+docker exec owrt-test mkdir -p /opt/airplanemode/scripts /opt/airplanemode/router
+docker cp scripts/router-user.sh owrt-test:/opt/airplanemode/scripts/
+docker cp router/rpcd-acl-airplanemode.json owrt-test:/opt/airplanemode/router/
+docker cp hardware/nanopi-r6s.env owrt-test:/opt/airplanemode/.env
+docker exec owrt-test sh /opt/airplanemode/scripts/router-user.sh
+PW=$(docker exec owrt-test sh -c 'grep ^ROUTER_PASSWORD= /opt/airplanemode/.env | cut -d= -f2')
+docker run --rm --network airplanemode -v "$PWD/admin:/app:ro" \
+  -e ROUTER_URL=http://owrt-test/ubus -e ROUTER_USER=airplanemode -e "ROUTER_PASSWORD=$PW" \
+  airplanemode-admin:local python tests/test_openwrt_live.py
 docker rm -f owrt-test
 ```
 
@@ -62,6 +77,9 @@ Wi-Fi reloads can't be checked there.
 
 Things only real hardware can prove. Tick them off here as they're verified.
 
+- [ ] `sh scripts/router-user.sh` works on the real firmware. It needs `uhttpd` (for
+      `uhttpd -m` and the `/ubus` endpoint): if this build serves LuCI with nginx instead,
+      check where `/ubus` lives and how to hash the password.
 - [ ] Both USB adapters appear as `radio0` / `radio1` in LuCI and in the admin panel.
 - [ ] The admin container can reach `ROUTER_URL` (the admin panel loads Wi-Fi settings).
 - [ ] **Scan** lists nearby networks on each radio.

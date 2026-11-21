@@ -13,3 +13,4 @@ rewriting history.
 | [0005](0005-front-door.md) | Caddy on 8080, apps under path prefixes |
 | [0006](0006-router-control-via-ubus.md) | Control the router through its own API (ubus), not a privileged container |
 | [0007](0007-shared-captive-portal-sign-in.md) | One sign-in for everyone: NAT plus captive-portal detection |
+| [0008](0008-least-privilege-router-login.md) | A Wi-Fi-only router login for the admin service |

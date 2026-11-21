@@ -18,7 +18,11 @@ if ! grep -qE '^ADMIN_PASSWORD=.+' .env; then
   echo "(It's saved in .env. You'll need it for http://<box>:8080/admin/)"
 fi
 if ! grep -qE '^ROUTER_PASSWORD=.+' .env; then
-  echo "warning: ROUTER_PASSWORD isn't set in .env, so the admin panel can show status but can't change Wi-Fi settings." >&2
+  echo "warning: no router login in .env yet, so the admin panel can show status but can't change Wi-Fi settings." >&2
+  echo "         Run once, as root:  sh scripts/router-user.sh" >&2
+elif grep -qE '^ROUTER_USER=root$' .env; then
+  echo "warning: the admin service is using the router's root login. Run 'sh scripts/router-user.sh'" >&2
+  echo "         to switch it to a login limited to Wi-Fi settings." >&2
 fi
 
 git pull --ff-only || echo "warning: could not update the repo, using the local copy" >&2

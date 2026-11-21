@@ -10,13 +10,13 @@ would then hand over the whole router: shell commands, files, SSH settings, pass
 
 ## Decision
 
-- `scripts/router-user.sh` (run once on the router as root) creates an rpcd login named
+- `scripts/router-setup.sh` (run once on the router as root) creates an rpcd login named
   **`airplanemode`**, bound to the access group in
   [router/rpcd-acl-airplanemode.json](../../router/rpcd-acl-airplanemode.json):
 
   | Allowed | What for |
   |---|---|
-  | `uci` get / changes / set / add / delete / apply / revert, on the `wireless`, `network` and `firewall` configs only | hotspots; upstream client interface; the `wwan` network and its `wan` firewall zone |
+  | `uci` get / changes / set / add / delete / apply / revert, on the `wireless`, `network`, `firewall` and `dhcp` configs only | hotspots; upstream client interface; the `wwan` network and its `wan` firewall zone; the offline popup's DNS entry and firewall rule (`dhcp` added by [0009](0009-connectivity-supervisor.md)) |
   | `iwinfo` info / scan / devices | scanning and Wi-Fi status |
   | `network.interface` status / dump | upstream link status |
 
@@ -43,4 +43,4 @@ the script keeps a single login and replaces the password.
   so narrowing further would mean moving those changes into a small root-owned helper on the
   router. Not worth it yet.
 - If a future feature needs another call (for example DHCP leases for a "connected devices"
-  view), add it to the access list on purpose and re-run `router-user.sh`.
+  view), add it to the access list on purpose and re-run `router-setup.sh`.

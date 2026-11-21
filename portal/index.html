@@ -76,6 +76,15 @@
     </div>
   </section>
 
+  <section class="signin" id="getonline">
+    <h2>Get online</h2>
+    <p id="getonlineText">None of the box's saved Wi-Fi networks are in range.</p>
+    <div class="row">
+      <a class="btn primary" href="/admin/#internet">Choose a Wi-Fi network</a>
+    </div>
+    <p style="margin:12px 0 0;font-size:.85rem">Needs the admin password. Got a network cable in the room? Plug it into the box's <b>WAN</b> port: it's used automatically, before any Wi-Fi.</p>
+  </section>
+
   <h2 class="section">Apps</h2>
   <div class="apps" id="apps"><p class="empty">Loading apps…</p></div>
 
@@ -97,21 +106,32 @@ fetch("/apps.json").then(r => r.json()).then(apps => {
     </a>`).join("") : '<p class="empty">No apps installed yet.</p>';
 }).catch(() => { $("#apps").innerHTML = '<p class="empty">Could not load the app list.</p>'; });
 
-const COPY = {
-  online:  ["Online", up => up.ssid ? `Sharing ${up.ssid} with everyone on this hotspot.` : "Sharing the internet with everyone on this hotspot."],
-  captive: ["Sign-in needed", up => `${up.ssid || "The upstream Wi-Fi"} wants a login before it lets anyone online.`],
-  offline: ["No internet", up => up.connected ? `Connected to ${up.ssid || "the upstream Wi-Fi"}, but it isn't reaching the internet. The apps below still work.`
-                                              : "Not connected to any Wi-Fi yet (an admin can pick one). The apps below still work."],
-};
+function describe(d) {
+  const up = d.upstream || {}, net = up.ssid || "the upstream Wi-Fi";
+  const where = d.via === "ethernet" ? "the wired connection" : net;
+  if (d.internet === "online")
+    return [d.via === "ethernet" ? "Online via Ethernet" : "Online", `Sharing ${where} with everyone on this hotspot.`];
+  if (d.internet === "captive")
+    return ["Sign-in needed", `${d.via === "ethernet" ? "The wired connection" : net} wants a login before it lets anyone online.`];
+  if (d.joining) return ["Connecting…", `Joining ${d.joining}, a saved network. This takes about 20 seconds.`];
+  if (d.via) return ["No internet", `Connected to ${where}, but it isn't reaching the internet. The apps below still work.`];
+  return ["No internet", "Not connected to any network right now. The apps below still work."];
+}
 
 async function check(refresh) {
   try {
     const d = await (await fetch("/api/status" + (refresh ? "?refresh=1" : ""))).json();
-    const [title, detail] = COPY[d.internet] || ["Unknown", () => ""];
-    $("#status").dataset.state = d.internet;
+    const [title, detail] = describe(d);
+    $("#status").dataset.state = d.joining && d.internet === "offline" ? "captive" : d.internet;
     $("#statusTitle").textContent = title;
-    $("#statusDetail").textContent = detail(d.upstream || {});
+    $("#statusDetail").textContent = detail;
     $("#signin").classList.toggle("show", d.internet === "captive");
+    const lost = d.internet === "offline" && !d.via && !d.joining;
+    $("#getonline").classList.toggle("show", lost);
+    $("#getonlineText").textContent = d.saved_networks && d.autojoin
+      ? "None of the box's saved Wi-Fi networks are in range. Pick a network nearby and the box will remember it for next time."
+      : d.saved_networks ? "Auto-connect is paused, and the box isn't on any network. Pick one to get online."
+      : "The box hasn't been connected to any Wi-Fi yet. Pick a network nearby; it'll be remembered for next time.";
     if (d.login_url) $("#loginLink").href = d.login_url;
     $("#backend").textContent = d.backend === "mock" ? "demo mode (mock router)" : "";
   } catch {
@@ -122,7 +142,7 @@ async function check(refresh) {
 }
 $("#recheck").addEventListener("click", () => check(true));
 check(new URLSearchParams(location.search).has("signed-in"));
-setInterval(() => check(false), 15000);
+setInterval(() => check(false), 10000);
 </script>
 </body>
 </html>

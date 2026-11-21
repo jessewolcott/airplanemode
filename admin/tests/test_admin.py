@@ -1,9 +1,12 @@
 """Admin API tests against the mock router.  Run: python admin/tests/test_admin.py"""
+import asyncio
 import os
 import sys
+import tempfile
 from pathlib import Path
 
-os.environ.update(ROUTER_BACKEND="mock", ADMIN_PASSWORD="test-pass")
+os.environ.update(ROUTER_BACKEND="mock", ADMIN_PASSWORD="test-pass", SUPERVISE_INTERVAL="0",
+                  DATA_DIR=tempfile.mkdtemp(prefix="am-test-"), JOIN_GRACE="45", PORTAL_AFTER_TICKS="2")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from fastapi.testclient import TestClient  # noqa: E402
@@ -97,6 +100,115 @@ def test_hotspots():
     assert a not in ids and new in ids
     # the public status never exposes keys
     assert "key" not in str(ok(c.get("/api/status")))
+
+
+def tick(now):
+    return asyncio.run(main.supervisor.tick(now))
+
+
+def reset_world():
+    r = main.router
+    r.upstream, r.ethernet, r.portal_on = None, False, False
+    r.in_range = {n["ssid"] for n in r.NEARBY}
+    main.store.data.update(networks=[], paused=False)
+    main.supervisor.__init__()
+    main._bust()
+
+
+def test_manual_join_is_remembered():
+    reset_world()
+    ok(c.post("/api/admin/upstream", headers=H, json={"radio": "radio1", "ssid": "CoffeeCorner", "encryption": "psk2", "key": "latte2024"}))
+    saved = ok(c.get("/api/admin/wifi"))["saved"]
+    assert [n["ssid"] for n in saved] == ["CoffeeCorner"] and saved[0]["has_key"], saved
+    assert "latte2024" not in str(saved), "saved-network list must not expose keys"
+    # an invalid key is rejected before anything is saved
+    assert c.post("/api/admin/upstream", headers=H, json={"radio": "radio1", "ssid": "Bad", "encryption": "psk2", "key": "short"}).status_code == 400
+    assert len(ok(c.get("/api/admin/wifi"))["saved"]) == 1
+    # saved to disk, not just memory
+    assert "CoffeeCorner" in (Path(os.environ["DATA_DIR"]) / "networks.json").read_text()
+
+
+def test_autojoin_strongest_then_falls_back():
+    reset_world()
+    main.store.remember("radio1", "CoffeeCorner", "psk2", "latte2024", None)              # -80 dBm, right key
+    main.store.remember("radio1", "Harbor_Hotel_Staff", "sae-mixed", "wrong-key-1", None)  # -61 dBm, wrong key
+    r = main.router
+    r.in_range = set()  # travelling: nothing known nearby
+    t = tick(0)
+    assert t["action"] == "no saved network in range" and not r.portal_on, t
+    t = tick(30)
+    assert r.portal_on, "offline popup should turn on after 2 ticks with no uplink"
+    s = ok(c.get("/api/status?refresh=1"))
+    assert s["internet"] == "offline" and s["via"] is None and s["joining"] is None, s
+
+    r.in_range = {"CoffeeCorner", "Harbor_Hotel_Staff", "Gate 14 Free WiFi"}
+    t = tick(60)
+    assert t["joining"] == "Harbor_Hotel_Staff", t       # strongest saved network first
+    assert ok(c.get("/api/status"))["joining"] == "Harbor_Hotel_Staff"
+    t = tick(80)
+    assert "waiting" in t["action"], t                     # still inside the grace period
+    t = tick(110)                                          # failed once -> retries it
+    assert t["joining"] == "Harbor_Hotel_Staff", t
+    t = tick(160)                                          # failed twice -> skip, try the next one
+    assert t["joining"] == "CoffeeCorner", t
+    t = tick(170)                                          # CoffeeCorner is up
+    assert t["linked"] and not r.portal_on, t              # popup off as soon as there's a link
+    s = ok(c.get("/api/status?refresh=1"))
+    assert s["internet"] == "online" and s["via"] == "wifi" and s["upstream"]["ssid"] == "CoffeeCorner", s
+    # unsaved networks are never auto-joined
+    assert r.upstream["ssid"] != "Gate 14 Free WiFi"
+
+
+def test_ethernet_wins():
+    reset_world()
+    r = main.router
+    r.ethernet = True
+    t = tick(0)
+    assert t["linked"] and t["ethernet"], t
+    s = ok(c.get("/api/status?refresh=1"))
+    assert s["internet"] == "online" and s["via"] == "ethernet", s
+    # with a cable, the box doesn't go hunting for Wi-Fi or show the offline popup
+    main.store.remember("radio1", "CoffeeCorner", "psk2", "latte2024", None)
+    tick(30), tick(60)
+    assert r.upstream is None and not r.portal_on
+    r.ethernet = False                                     # unplugged: Wi-Fi takes over
+    t = tick(90)
+    assert t["joining"] == "CoffeeCorner", t
+
+
+def test_disconnect_pauses_autojoin():
+    reset_world()
+    main.store.remember("radio1", "CoffeeCorner", "psk2", "latte2024", None)
+    ok(c.delete("/api/admin/upstream", headers=H))
+    assert ok(c.get("/api/admin/wifi"))["autojoin"]["paused"] is True
+    t = tick(0)
+    assert t["joining"] is None and main.router.upstream is None, t
+    assert ok(c.get("/api/status?refresh=1"))["autojoin"] is False
+    ok(c.post("/api/admin/autojoin", headers=H, json={"enabled": True}))
+    assert tick(30)["joining"] == "CoffeeCorner"
+
+
+def test_forget():
+    reset_world()
+    main.store.remember("radio1", "CoffeeCorner", "psk2", "latte2024", None)
+    ok(c.delete("/api/admin/networks/CoffeeCorner", headers=H))
+    assert ok(c.get("/api/admin/wifi"))["saved"] == []
+    assert c.delete("/api/admin/networks/CoffeeCorner", headers=H).status_code == 404
+    main.router.in_range = {"CoffeeCorner"}
+    assert tick(0)["joining"] is None
+
+
+def test_offline_popup_waits_during_join():
+    reset_world()
+    main.store.remember("radio1", "CoffeeCorner", "psk2", "wrong-key-9", None)
+    r = main.router
+    tick(0)                                                # starts joining immediately
+    tick(10), tick(20)                                     # 3 ticks down, but inside the grace period
+    assert not r.portal_on, "popup must not flip on while a join is in progress"
+    tick(50)                                               # grace over: first failure, retry (new grace)
+    assert not r.portal_on
+    t = tick(100)                                          # second failure: nothing left to try
+    assert t["joining"] is None and r.portal_on, t
 
 
 def test_logout():

@@ -14,6 +14,14 @@ import re
 
 UPSTREAM_SECTION = "airplanemode_up"   # the one STA interface we manage
 UPSTREAM_NET = "wwan"                  # its network interface, placed in the firewall's wan zone
+WWAN_METRIC = "20"                     # Ethernet WAN gets 10 (router-setup.sh), so a cable wins
+
+# Offline popup: when there is no upstream link at all, every DNS name answers with a fake
+# address, and a firewall rule sends that address to the landing page. Phones then show the
+# landing page as a "sign in to network" screen. Removed as soon as any uplink comes back.
+PORTAL_IP = "10.255.255.1"
+PORTAL_DNS = f"/#/{PORTAL_IP}"
+PORTAL_RULE = "airplanemode_portal"
 
 HOTSPOT_SECURITY = ["sae-mixed", "psk2", "sae", "none"]
 UPSTREAM_SECURITY = ["none", "psk", "psk2", "psk-mixed", "sae", "sae-mixed"]
@@ -97,11 +105,14 @@ class OpenWrtRouter:
     name = "openwrt"
     ANON = "0" * 32
 
-    def __init__(self, url, username, password, client):
+    def __init__(self, url, username, password, client, lan_ip="192.168.2.1", http_port="8080", wan_iface="wan"):
         self.url = url
         self.username = username
         self.password = password
         self.client = client
+        self.lan_ip = lan_ip
+        self.http_port = str(http_port)
+        self.wan_iface = wan_iface
         self.sid = None
 
     async def _rpc(self, sid, obj, method, args, timeout=20):
@@ -189,6 +200,56 @@ class OpenWrtRouter:
                 pass
         return out
 
+    async def ethernet_status(self):
+        try:
+            st = await self.call("network.interface", "status", {"interface": self.wan_iface}, timeout=5)
+        except RouterError:
+            return {"present": False, "connected": False}
+        return {"present": True, "connected": bool(st.get("up")),
+                "ip": (st.get("ipv4-address") or [{}])[0].get("address")}
+
+    async def portal_mode(self):
+        dh = await self._uci("dhcp")
+        for s in dh.values():
+            if s.get(".type") == "dnsmasq":
+                addrs = s.get("address") or []
+                return PORTAL_DNS in (addrs.split() if isinstance(addrs, str) else addrs)
+        return False
+
+    async def set_offline_portal(self, on):
+        """Turn the offline popup on or off. Idempotent; returns True if anything changed."""
+        changed = False
+        dh = await self._uci("dhcp")
+        name, sec = next(((n, s) for n, s in dh.items() if s.get(".type") == "dnsmasq"), (None, None))
+        if name:
+            addrs = sec.get("address") or []
+            addrs = addrs.split() if isinstance(addrs, str) else list(addrs)
+            want = [a for a in addrs if a != PORTAL_DNS] + ([PORTAL_DNS] if on else [])
+            if want != addrs:
+                if want:
+                    await self.call("uci", "set", {"config": "dhcp", "section": name, "values": {"address": want}})
+                else:
+                    await self.call("uci", "delete", {"config": "dhcp", "section": name, "option": "address"})
+                changed = True
+        fw = await self._uci("firewall")
+        # Phones check for sign-in pages over plain HTTP (port 80). The port match also gives
+        # fw4 the TCP match nftables needs before it can DNAT to a port.
+        rule = {"name": "AirplaneMode offline popup", "src": "lan", "proto": "tcp", "src_dip": PORTAL_IP,
+                "src_dport": "80", "dest_ip": self.lan_ip, "dest_port": self.http_port, "target": "DNAT",
+                "enabled": "1" if on else "0"}
+        cur = fw.get(PORTAL_RULE)
+        if cur is None:
+            if on:
+                await self.call("uci", "add", {"config": "firewall", "type": "redirect", "name": PORTAL_RULE,
+                                               "values": rule})
+                changed = True
+        elif any(cur.get(k) != v for k, v in rule.items()):
+            await self.call("uci", "set", {"config": "firewall", "section": PORTAL_RULE, "values": rule})
+            changed = True
+        if changed:
+            await self._apply("dhcp", "firewall")
+        return changed
+
     async def scan(self, radio):
         try:
             res = await self.call("iwinfo", "scan", {"device": radio})
@@ -219,7 +280,10 @@ class OpenWrtRouter:
         net = await self._uci("network")
         if UPSTREAM_NET not in net:
             await self.call("uci", "add", {"config": "network", "type": "interface", "name": UPSTREAM_NET,
-                                           "values": {"proto": "dhcp"}})
+                                           "values": {"proto": "dhcp", "metric": WWAN_METRIC}})
+        elif net[UPSTREAM_NET].get("metric") != WWAN_METRIC:
+            await self.call("uci", "set", {"config": "network", "section": UPSTREAM_NET,
+                                           "values": {"metric": WWAN_METRIC}})
         fw = await self._uci("firewall")
         for name, s in fw.items():
             if s.get(".type") == "zone" and s.get("name") == "wan":
@@ -326,10 +390,26 @@ class MockRouter:
         ]
         self.upstream = None
         self.portal_cleared = set()
+        self.ethernet = False          # is a WAN cable plugged in (with internet behind it)?
+        self.portal_on = False         # offline popup state
+        self.in_range = {n["ssid"] for n in self.NEARBY}  # which nearby networks are visible
         self._n = 0
 
     def _net(self, ssid):
+        if ssid not in self.in_range:
+            return None
         return next((n for n in self.NEARBY if n["ssid"] == ssid), None)
+
+    async def ethernet_status(self):
+        return {"present": True, "connected": self.ethernet, "ip": "192.0.2.10" if self.ethernet else None}
+
+    async def portal_mode(self):
+        return self.portal_on
+
+    async def set_offline_portal(self, on):
+        changed = self.portal_on != bool(on)
+        self.portal_on = bool(on)
+        return changed
 
     async def overview(self):
         return copy.deepcopy({"radios": self.radios, "hotspots": self.hotspots, "upstream": self.upstream})
@@ -347,7 +427,7 @@ class MockRouter:
         if radio not in {r["id"] for r in self.radios}:
             raise RouterError(f"No such radio: {radio}.")
         return [{k: v for k, v in n.items() if k in ("ssid", "bssid", "channel", "signal", "security")}
-                for n in self.NEARBY]
+                for n in self.NEARBY if n["ssid"] in self.in_range]
 
     async def join(self, radio, ssid, encryption, key, macaddr):
         ssid = check_ssid(ssid)
@@ -362,6 +442,8 @@ class MockRouter:
 
     def internet(self):
         """What a captive-portal probe would see right now (mock only)."""
+        if self.ethernet:
+            return "online"  # Ethernet has priority, and the mock cable has open internet
         if not self.upstream or self.upstream["disabled"]:
             return "offline"
         net = self._net(self.upstream["ssid"])

@@ -56,10 +56,10 @@ same test as that user. It adds checks that out-of-scope calls are refused:
 
 ```sh
 docker exec owrt-test mkdir -p /opt/airplanemode/scripts /opt/airplanemode/router
-docker cp scripts/router-user.sh owrt-test:/opt/airplanemode/scripts/
+docker cp scripts/router-setup.sh owrt-test:/opt/airplanemode/scripts/
 docker cp router/rpcd-acl-airplanemode.json owrt-test:/opt/airplanemode/router/
 docker cp hardware/nanopi-r6s.env owrt-test:/opt/airplanemode/.env
-docker exec owrt-test sh /opt/airplanemode/scripts/router-user.sh
+docker exec owrt-test sh /opt/airplanemode/scripts/router-setup.sh
 PW=$(docker exec owrt-test sh -c 'grep ^ROUTER_PASSWORD= /opt/airplanemode/.env | cut -d= -f2')
 docker run --rm --network airplanemode -v "$PWD/admin:/app:ro" \
   -e ROUTER_URL=http://owrt-test/ubus -e ROUTER_USER=airplanemode -e "ROUTER_PASSWORD=$PW" \
@@ -77,7 +77,7 @@ Wi-Fi reloads can't be checked there.
 
 Things only real hardware can prove. Tick them off here as they're verified.
 
-- [ ] `sh scripts/router-user.sh` works on the real firmware. It needs `uhttpd` (for
+- [ ] `sh scripts/router-setup.sh` works on the real firmware. It needs `uhttpd` (for
       `uhttpd -m` and the `/ubus` endpoint): if this build serves LuCI with nginx instead,
       check where `/ubus` lives and how to hash the password.
 - [ ] Both USB adapters appear as `radio0` / `radio1` in LuCI and in the admin panel.
@@ -90,6 +90,19 @@ Things only real hardware can prove. Tick them off here as they're verified.
 - [ ] A real captive portal (hotel or café) is detected, **Open the sign-in page** loads it
       from a phone on the hotspot, and after signing in a second device is online without
       signing in.
+- [ ] **Passthrough popup:** a phone that joins the hotspot *after* the box is on the hotel
+      network shows the hotel's own "Sign in to network" popup, and the page loads (this is
+      what DNS rebind protection used to break).
+- [ ] The admin container's DNS (`dns: LAN_IP`) works: `/api/status` says *captive*, not
+      *offline*, at a hotel before signing in.
+- [ ] **Offline popup:** with no uplink, after ~1 minute an iPhone and an Android phone
+      joining the hotspot show the AirplaneMode page as a sign-in screen; it stops as soon
+      as Ethernet or Wi-Fi comes back. Check `fw4 print` contains `jump dstnat_lan` for the
+      LAN interface (an unprivileged container can't show that).
+- [ ] **Auto-join:** move between two saved networks (or switch one off): the box joins the
+      one in range within ~1 minute, and skips one whose password changed.
+- [ ] **Ethernet first:** with Wi-Fi up, plug a cable into WAN. The landing page says *Online
+      via Ethernet* and traffic leaves via the cable (`ip route` shows metric 10 before 20).
 - [ ] MAC clone: a network that only lets one signed-in phone through works after cloning
       that phone's MAC.
 - [ ] Changing the hotspot you're connected to: devices drop, reconnect with the new

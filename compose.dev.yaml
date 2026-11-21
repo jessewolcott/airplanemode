@@ -3,6 +3,7 @@
 #   docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 # Expects the app repos next to this one, e.g. ../airplanemode-darklight
 # Admin password in dev: "dev" (unless ADMIN_PASSWORD is set in .env).
+# Simulate travel:  POST /api/mock/world {"ethernet": true} or {"in_range": ["CoffeeCorner"]}
 
 services:
   proxy:
@@ -13,6 +14,9 @@ services:
     environment:
       ROUTER_BACKEND: mock
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-dev}
+      SUPERVISE_INTERVAL: "5"      # react quickly in demos
+      JOIN_GRACE: "6"
+    dns: !reset []
 
   darklight:
     image: airplanemode-darklight:dev

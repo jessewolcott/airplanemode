@@ -18,13 +18,17 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./portal:/srv/portal:ro
       - caddy-data:/data
+    environment:
+      LAN_IP: ${LAN_IP:-127.0.0.1}       # offline-popup redirects go here
+      HTTP_PORT: ${HTTP_PORT:-8080}
     mem_limit: ${PROXY_MEM:-64m}
     restart: unless-stopped
 
-  # Landing-page status, captive-portal check, and the admin panel (Wi-Fi settings).
+  # Landing-page status, captive-portal check, the admin panel (Wi-Fi settings), and the
+  # connectivity supervisor (auto-join saved networks, offline popup).
   # Built from this repo. It changes router settings through the router's own ubus API,
   # so it needs no privileges, just the router's address and a Wi-Fi-only login that
-  # scripts/router-user.sh creates (see .env).
+  # scripts/router-setup.sh creates (see .env).
   admin:
     build: ./admin
     image: airplanemode-admin:local
@@ -34,6 +38,18 @@ services:
       ROUTER_USER: ${ROUTER_USER:-airplanemode}
       ROUTER_PASSWORD: ${ROUTER_PASSWORD:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      LAN_IP: ${LAN_IP:-127.0.0.1}
+      HTTP_PORT: ${HTTP_PORT:-8080}
+      WAN_IFACE: ${WAN_IFACE:-wan}
+      AUTOJOIN: ${AUTOJOIN:-1}
+      OFFLINE_PORTAL: ${OFFLINE_PORTAL:-1}
+    volumes:
+      - admin-data:/data            # saved networks
+    # Use the router's own DNS (dnsmasq). Docker can't reach a resolver on the host's
+    # 127.0.0.1, so it would otherwise fall back to public DNS, which hotels block before
+    # sign-in, and the captive-portal check would wrongly report "offline".
+    dns:
+      - ${LAN_IP:-127.0.0.1}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     mem_limit: ${ADMIN_MEM:-96m}
@@ -79,3 +95,4 @@ networks:
 volumes:
   models:
   caddy-data:
+  admin-data:

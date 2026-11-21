@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import httpx  # noqa: E402
 
-from router import UPSTREAM_NET, UPSTREAM_SECTION, OpenWrtRouter, RouterError  # noqa: E402
+from router import PORTAL_DNS, PORTAL_RULE, UPSTREAM_NET, UPSTREAM_SECTION, WWAN_METRIC, OpenWrtRouter, RouterError  # noqa: E402
 
 
 async def main():
@@ -44,6 +44,7 @@ async def main():
         assert sta[".type"] == "wifi-iface" and sta["mode"] == "sta" and sta["device"] == "radio0", sta
         assert sta["ssid"] == "Harbor_Hotel_Guest" and sta["encryption"] == "none" and "key" not in sta, sta
         assert net[UPSTREAM_NET]["proto"] == "dhcp", net.get(UPSTREAM_NET)
+        assert net[UPSTREAM_NET].get("metric") == WWAN_METRIC, net[UPSTREAM_NET]
         wan = next(s for s in fw.values() if s.get(".type") == "zone" and s.get("name") == "wan")
         assert UPSTREAM_NET in wan["network"], wan
         print("ok   join open network: sta iface + wwan + firewall wan zone")
@@ -101,6 +102,33 @@ async def main():
             print("note scan returned results (unexpected without real radios)")
         except RouterError as e:
             print("ok   scan without real radios fails cleanly ->", e)
+
+        # ---- Ethernet status + offline popup ----
+        t0 = asyncio.get_running_loop().time()
+        eth = await r.ethernet_status()
+        assert asyncio.get_running_loop().time() - t0 < 8, "ethernet status must not hang"
+        print("ok   ethernet status:", eth)
+
+        before = await uci("dhcp")
+        assert await r.set_offline_portal(True) is True
+        dns = next(s for s in (await uci("dhcp")).values() if s.get(".type") == "dnsmasq")
+        addrs = dns.get("address") or []
+        assert PORTAL_DNS in addrs, addrs
+        rule = (await uci("firewall"))[PORTAL_RULE]
+        assert rule[".type"] == "redirect" and rule["target"] == "DNAT" and rule["enabled"] == "1", rule
+        assert await r.portal_mode() is True
+        assert await r.set_offline_portal(True) is False, "second 'on' should change nothing"
+        print("ok   offline popup on: wildcard DNS + DNAT rule (idempotent)")
+        assert await r.set_offline_portal(False) is True
+        dns = next(s for s in (await uci("dhcp")).values() if s.get(".type") == "dnsmasq")
+        assert PORTAL_DNS not in (dns.get("address") or []), dns
+        assert (await uci("firewall"))[PORTAL_RULE]["enabled"] == "0"
+        assert await r.portal_mode() is False
+        # other DNS entries (like the airplane.mode name) survive on/off
+        other = [a for a in (next(s for s in before.values() if s.get(".type") == "dnsmasq").get("address") or [])
+                 if a != PORTAL_DNS]
+        assert all(a in (dns.get("address") or []) for a in other), (other, dns.get("address"))
+        print("ok   offline popup off: wildcard removed, rule disabled, other DNS entries kept", other)
 
         if user != "root":
             # the restricted login must be refused everything outside Wi-Fi settings

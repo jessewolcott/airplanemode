@@ -6,6 +6,8 @@ private hotspot for your devices that:
 - **joins the hotel, airport or plane Wi-Fi once, and shares it.** One person gets through
   the "accept the terms" page, and every phone, laptop and tablet on your hotspot is online.
   No more signing each device in, or paying per device.
+- **remembers networks and reconnects by itself.** Back at the same hotel or café, it rejoins
+  without anyone touching it. Plug in a room's Ethernet cable and that's used first.
 - **broadcasts your own Wi-Fi network,** with the same name and password everywhere you go,
   so your devices connect automatically in every new place.
 - **runs apps locally,** games and tools that work with no internet at all, including a small
@@ -46,11 +48,23 @@ flowchart LR
 ```
 
 - **Sharing one sign-in.** All your devices reach the hotel network through the router, so
-  the hotel sees a single device. The landing page probes the internet the same way phones
-  do. When it finds a sign-in page, it shows **"This Wi-Fi needs a sign-in"** with a button
-  that opens it. One person signs in, and everyone is online. For hotels that tie the login
-  to a particular device, the admin panel can make the router use your phone's MAC address
-  (*clone MAC*).
+  the hotel sees a single device. Usually the first phone that joins your hotspot shows the
+  hotel's own "Sign in to network" popup, because its connectivity check passes straight
+  through the box (like a GL.iNet). As a backup, the landing page runs the same check and
+  shows **"This Wi-Fi needs a sign-in"** with a button that opens the page. One person signs
+  in, and everyone is online. For hotels that tie the login to one device, the admin panel
+  can make the router use your phone's MAC address (*clone MAC*). The setup script turns
+  off DNS rebind protection, which would otherwise block many hotel sign-in pages
+  ([decision 0009](docs/decisions/0009-connectivity-supervisor.md)).
+- **Staying connected.** A supervisor checks the uplinks every 30 seconds:
+  - **Ethernet first.** A cable in the WAN port always wins over Wi-Fi.
+  - **Saved networks.** With no uplink, the box scans and joins the strongest network it
+    has been on before. A network that keeps failing (say, a changed password) is skipped
+    for 10 minutes.
+  - **Offline popup.** With no uplink at all, phones that join your hotspot get the landing
+    page as a sign-in screen, so people find the apps and the *Get online* button without
+    knowing the address. It switches off the moment any uplink is back, so it never gets
+    in front of a hotel's own sign-in page.
 - **Changing Wi-Fi settings safely.** The admin service doesn't run with special
   privileges. It changes settings through the router's own management API, the same one the
   router's built-in admin page (LuCI) uses. It refuses to turn off your last working hotspot,
@@ -86,7 +100,9 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
 | Landing page, app menu, sign-in flow, admin panel | tested end to end in the browser against the mock router |
 | Admin API (auth, validation, lockout guard, captive flow) | automated tests, run in CI |
 | Router control (join, MAC clone, firewall, hotspots) | tested against a real OpenWrt 24.10 API in Docker (`admin/tests/test_openwrt_live.py`) |
-| Limited router login (`scripts/router-user.sh`) | tested on real OpenWrt 24.10: every admin feature works, and 8 out-of-scope calls are refused |
+| Limited router login (`scripts/router-setup.sh`) | tested on real OpenWrt 24.10: every admin feature works, and 8 out-of-scope calls are refused |
+| Auto-join, Ethernet priority, offline popup (supervisor logic) | automated tests against the mock router; travel simulated in the browser |
+| Router side of those (route metrics, rebind off, popup DNS + firewall rule) | tested on real OpenWrt 24.10; the generated firewall ruleset passes nftables' own syntax check |
 | Live link status, scanning, reloading Wi-Fi on real radios | **needs a real device:** see the checklist in [docs/testing.md](docs/testing.md) |
 | Full stack with the 1.5B model | tested on a PC with Docker Desktop; speed on the R6S not yet measured |
 
@@ -107,26 +123,35 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
    cd /opt/airplanemode
    cp hardware/nanopi-r6s.env .env           # or hardware/glinet.env
    # if your LAN isn't the default subnet, also fix LAN_IP in .env
-   sh scripts/router-user.sh                 # creates the Wi-Fi-only router login
+   sh scripts/router-setup.sh                # prepares the router (see below)
    sh scripts/update.sh
    ```
 
-   `router-user.sh` creates a router login called `airplanemode` that can change Wi-Fi
-   settings and nothing else, and saves its random password in `.env`. Run it again any
-   time to rotate that password. On the first run, `update.sh` generates an **admin
-   password** for the admin panel, prints it and saves it in `.env`. Write it down.
-6. **Give the box a friendly name,** `airplane.mode`, in the router's DNS
-   ([docs/hardware.md](docs/hardware.md#the-airplanemode-name-both-devices)).
-7. **Open `http://airplane.mode:8080/admin/`**, sign in, and rename your hotspot and set its
+   `router-setup.sh` prepares the router, and is safe to run again:
+   - creates a router login called `airplanemode` that can change Wi-Fi settings and
+     nothing else, and saves its random password in `.env` (re-running rotates it);
+   - turns off DNS rebind protection so hotel sign-in pages load (keep it with
+     `KEEP_REBIND_PROTECTION=1`);
+   - points the name **`airplane.mode`** at the box;
+   - makes the Ethernet WAN preferred over Wi-Fi.
+
+   On the first run, `update.sh` generates an **admin password** for the admin panel,
+   prints it and saves it in `.env`. Write it down.
+6. **Open `http://airplane.mode:8080/admin/`**, sign in, and rename your hotspot and set its
    password. Your devices remember it from then on.
 
 ## Using it on a trip
 
-1. Power the box on and connect your devices to **your** hotspot as usual.
-2. Open **`http://airplane.mode:8080`**. The landing page shows whether you're online.
-3. Not connected yet? **admin → Internet source → Scan**, pick the hotel network, enter its
-   password if it has one, then **Connect**.
-4. If the hotel needs a sign-in, the landing page says so. Tap **Open the sign-in page**,
+1. Power the box on and connect your devices to **your** hotspot as usual. If the room has
+   an Ethernet port, plug it into the box's **WAN** port: it's used automatically.
+2. Somewhere you've been before? The box rejoins that network by itself within about a
+   minute.
+3. Somewhere new? Your phone shows the AirplaneMode page as a sign-in screen (or open
+   **`http://airplane.mode:8080`**). Tap **Choose a Wi-Fi network**, sign in to admin, pick
+   the hotel network, enter its password if it has one, then **Connect**. It's remembered
+   for next time.
+4. If the hotel needs a sign-in, the first phone usually pops up the hotel's own sign-in
+   page. If not, the landing page says *Sign-in needed*: tap **Open the sign-in page**,
    accept the terms or enter your room number, then tap **I've signed in**. Everyone on
    your hotspot is now online.
 5. No Wi-Fi at all, like on a plane without it? The apps still work.
@@ -147,7 +172,9 @@ docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 # http://localhost:8080  (admin password in dev mode: "dev")
 ```
 
-Join `Harbor_Hotel_Guest` in the admin panel to see the sign-in flow. After editing the
+Join `Harbor_Hotel_Guest` in the admin panel to see the sign-in flow. Simulate travel with
+`curl -X POST localhost:8080/api/mock/world -H 'Content-Type: application/json' -d '{"in_range": []}'`
+(walk away from every network), `{"in_range": ["CoffeeCorner"]}`, or `{"ethernet": true}`. After editing the
 `Caddyfile`, run `docker compose restart proxy`. Tests: `python admin/tests/test_admin.py`.
 
 ## Repo layout
@@ -160,7 +187,7 @@ portal/               landing page + apps.json (the app menu)
 admin/                admin service: status, captive-portal check, Wi-Fi control, admin UI
 hardware/*.env        per-device settings (copy one to .env, then add your secrets)
 scripts/update.sh     pull, build, start, pre-download the model while online
-scripts/router-user.sh  create/rotate the Wi-Fi-only router login (run once, as root)
+scripts/router-setup.sh  prepare the router: Wi-Fi-only login, DNS, Ethernet priority (as root)
 router/               the access list for that login
 docs/app-contract.md  what an app must do to plug in
 docs/hardware.md      device setup details and caveats
@@ -192,5 +219,11 @@ docs/decisions/       why things are the way they are
   so pick a real password for your hotspot.
 - The admin panel uses an HttpOnly, same-site session cookie and a custom request header
   against cross-site requests, and slows down wrong-password attempts.
+- DNS rebind protection is **off**, because hotel sign-in pages need it off. That weakens a
+  defence against malicious websites reaching devices on your LAN by name. Keep it on with
+  `KEEP_REBIND_PROTECTION=1 sh scripts/router-setup.sh` if you rarely use hotel Wi-Fi with
+  sign-in pages ([decision 0009](docs/decisions/0009-connectivity-supervisor.md)).
+- Saved networks' passwords are kept in the admin service's data volume (mode 600), the same
+  way OpenWrt itself stores Wi-Fi passwords in its config.
 - It's plain HTTP on your own LAN: there's no public name to get a certificate for. See
   [decision 0004](docs/decisions/0004-offline-first.md).

@@ -57,14 +57,22 @@ from the container. If the admin panel says it can't reach the router's API (*un
 
 ## The `airplane.mode` name (both devices)
 
-Both firmwares use dnsmasq. Point a name at the box's LAN address, in LuCI under
-**Network → DHCP and DNS → Hostnames**, or from a shell (*untested*):
+`scripts/router-setup.sh` sets this up: it adds `address=/airplane.mode/<LAN_IP>` to dnsmasq
+(tested on OpenWrt 24.10). Then open `http://airplane.mode:8080` from any device on your
+hotspot. Devices using their own encrypted DNS (Android "Private DNS", iCloud Private Relay)
+may skip the router's DNS. For those, use `http://<LAN_IP>:8080`.
 
-```sh
-uci add dhcp domain
-uci set dhcp.@domain[-1].name='airplane.mode'
-uci set dhcp.@domain[-1].ip='192.168.2.1'    # the box's LAN IP (GL.iNet: 192.168.8.1)
-uci commit dhcp && /etc/init.d/dnsmasq restart
-```
+## WAN interface name
 
-Then open `http://airplane.mode:8080` from any device on your hotspot.
+`router-setup.sh` gives the wired WAN route metric 10, and the admin service gives the Wi-Fi
+uplink (`wwan`) metric 20, so a cable always wins. It assumes the WAN interface is called
+`wan`, as on FriendlyWrt and GL.iNet. If yours differs (LuCI → Network → Interfaces), set
+`WAN_IFACE=<name>` in `.env` and re-run the script.
+
+## DNS rebind protection and hotel sign-in pages
+
+OpenWrt's dnsmasq refuses DNS answers that point at private addresses ("rebind protection").
+Hotel and airline sign-in pages very often live at exactly such addresses, so with protection
+on they fail to load, both in the phone's popup and from the landing page. `router-setup.sh`
+turns it off. GL.iNet firmware makes a similar trade-off for its repeater mode. To keep it
+on: `KEEP_REBIND_PROTECTION=1 sh scripts/router-setup.sh`.

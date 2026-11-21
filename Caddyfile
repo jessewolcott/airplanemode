@@ -7,6 +7,14 @@
 :80 {
 	encode gzip
 
+	# ---- offline popup ----
+	# With no internet at all, the router answers every DNS name with a fake address and a
+	# firewall rule forwards it here (see admin/router.py). So a request for any other hostname
+	# (captive.apple.com, connectivitycheck.gstatic.com, ...) is a phone checking for a sign-in
+	# page: send it to the landing page, which the phone then shows as a sign-in screen.
+	@elsewhere not host {$LAN_IP:127.0.0.1} airplane.mode localhost
+	redir @elsewhere http://{$LAN_IP:127.0.0.1}:{$HTTP_PORT:8080}/ 302
+
 	# ---- apps: one block per app. The prefix is stripped before the app sees the request. ----
 	redir /darklight /darklight/
 	handle_path /darklight/* {

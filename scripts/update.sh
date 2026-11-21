@@ -19,9 +19,9 @@ if ! grep -qE '^ADMIN_PASSWORD=.+' .env; then
 fi
 if ! grep -qE '^ROUTER_PASSWORD=.+' .env; then
   echo "warning: no router login in .env yet, so the admin panel can show status but can't change Wi-Fi settings." >&2
-  echo "         Run once, as root:  sh scripts/router-user.sh" >&2
+  echo "         Run once, as root:  sh scripts/router-setup.sh" >&2
 elif grep -qE '^ROUTER_USER=root$' .env; then
-  echo "warning: the admin service is using the router's root login. Run 'sh scripts/router-user.sh'" >&2
+  echo "warning: the admin service is using the router's root login. Run 'sh scripts/router-setup.sh'" >&2
   echo "         to switch it to a login limited to Wi-Fi settings." >&2
 fi
 

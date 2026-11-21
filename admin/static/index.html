@@ -62,6 +62,11 @@
   details summary { cursor: pointer; color: var(--dim); font-size: .85rem; margin-top: 12px; }
   .apps a { color: var(--ink); } .apps li { margin: 4px 0; } .apps li span { color: var(--dim); font-size: .85rem; }
 
+  ul.saved { list-style: none; padding: 0; margin: 6px 0 0; }
+  ul.saved li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: .9rem; }
+  ul.saved li .note { margin-left: 6px; }
+  ul.saved button { font: .75rem var(--mono); color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; cursor: pointer; }
+  ul.saved button:hover { color: var(--bad); border-color: #5a2f2a; }
   #login { max-width: 360px; margin: 60px auto; }
   .hidden { display: none !important; }
 </style>
@@ -87,7 +92,7 @@
 
   <div id="panel" class="hidden">
     <!-- upstream -->
-    <section class="card">
+    <section class="card" id="internet">
       <h2>Internet source</h2>
       <p class="lead">The Wi-Fi network this box joins (hotel, airport, plane). Everyone on your hotspots shares it.</p>
       <div class="state"><span class="dot" id="netDot"></span><span id="netText">Checking…</span></div>
@@ -115,6 +120,9 @@
         <div class="row"><button class="btn primary" id="joinBtn">Connect</button><button class="btn danger" id="leaveBtn" type="button">Disconnect</button></div>
       </form>
       <div class="msg" id="upMsg"></div>
+      <h3 style="font-size:.9rem;margin:18px 0 4px">Saved networks</h3>
+      <p class="note" id="autojoinLine"></p>
+      <ul class="saved" id="saved"></ul>
     </section>
 
     <!-- hotspots -->
@@ -193,11 +201,39 @@ async function load() {
 async function refreshNet() {
   const s = await (await fetch("/api/status?refresh=1")).json();
   const up = state.upstream_status || {};
-  const text = { online: `Online through <b>${esc(s.upstream.ssid || "upstream Wi-Fi")}</b>`, captive: `Connected to <b>${esc(s.upstream.ssid || "upstream Wi-Fi")}</b>, but it needs a sign-in`, offline: up.connected ? `Connected to <b>${esc(up.ssid)}</b> but no internet` : (state.upstream && !state.upstream.disabled ? `Trying to connect to <b>${esc(state.upstream.ssid)}</b>…` : "Not connected to any upstream Wi-Fi") }[s.internet];
-  $("#netDot").className = "dot " + s.internet; $("#netText").innerHTML = text + (up.ip ? ` <span class="note">· ${esc(up.ip)}</span>` : "");
+  const src = s.via === "ethernet" ? "<b>Ethernet</b> (WAN port)" : `<b>${esc(s.upstream.ssid || "upstream Wi-Fi")}</b>`;
+  const text = s.internet === "online" ? `Online through ${src}`
+    : s.internet === "captive" ? `Connected to ${src}, but it needs a sign-in`
+    : s.joining ? `Auto-connecting to saved network <b>${esc(s.joining)}</b>…`
+    : up.connected ? `Connected to <b>${esc(up.ssid)}</b> but no internet`
+    : (state.upstream && !state.upstream.disabled ? `Trying to connect to <b>${esc(state.upstream.ssid)}</b>…` : "Not connected to any network");
+  const eth = state.ethernet || {};
+  const ip = s.via === "ethernet" ? eth.ip : up.ip;
+  $("#netDot").className = "dot " + s.internet; $("#netText").innerHTML = text + (ip ? ` <span class="note">· ${esc(ip)}</span>` : "")
+    + (s.via !== "ethernet" && eth.present ? ` <span class="note">· Ethernet: ${eth.connected ? "connected" : "unplugged"}</span>` : "");
   $("#captiveRow").classList.toggle("hidden", s.internet !== "captive");
   if (s.login_url) $("#captiveLink").href = s.login_url;
+  renderSaved();
 }
+
+function renderSaved() {
+  const aj = state.autojoin || {};
+  $("#autojoinLine").innerHTML = !aj.enabled ? "Auto-connect is turned off on this box (AUTOJOIN=0)."
+    : aj.paused ? `Auto-connect is <b>paused</b> because you disconnected. <button class="link" id="resumeAj" type="button">Resume</button>`
+    : "When there's no connection, the box joins the strongest of these that's in range. Ethernet always comes first.";
+  const r = $("#resumeAj");
+  if (r) r.addEventListener("click", () => busy(r, async () => { await api("POST", "/api/admin/autojoin", { enabled: true }); state = await api("GET", "/api/admin/wifi"); refreshNet(); }));
+  $("#saved").innerHTML = (state.saved || []).map(n => `<li><span>${esc(n.ssid)}<span class="note">${secLabel(n.encryption)}${n.macaddr ? " · cloned MAC" : ""}</span></span><button type="button" data-forget="${esc(n.ssid)}">forget</button></li>`).join("")
+    || `<li class="note">None yet. Networks you connect to are remembered here.</li>`;
+}
+$("#saved").addEventListener("click", e => {
+  const b = e.target.closest("[data-forget]"); if (!b) return;
+  if (!confirm(`Forget "${b.dataset.forget}"? The box won't join it automatically any more.`)) return;
+  busy(b, async () => {
+    try { await api("DELETE", `/api/admin/networks/${encodeURIComponent(b.dataset.forget)}`); state = await api("GET", "/api/admin/wifi"); renderSaved(); }
+    catch (err) { msg($("#upMsg"), err.message, false); }
+  });
+});
 
 $("#scanBtn").addEventListener("click", e => busy(e.target, async () => {
   $("#nets").innerHTML = `<tr><td class="note">Scanning… (a few seconds)</td></tr>`;
@@ -230,7 +266,7 @@ $("#joinForm").addEventListener("submit", e => { e.preventDefault(); busy($("#jo
   } catch (err) { msg($("#upMsg"), err.message, false); }
 }); });
 $("#leaveBtn").addEventListener("click", e => busy(e.target, async () => {
-  try { await api("DELETE", "/api/admin/upstream"); msg($("#upMsg"), "Disconnected from the upstream Wi-Fi.", true); state = await api("GET", "/api/admin/wifi"); refreshNet(); }
+  try { await api("DELETE", "/api/admin/upstream"); msg($("#upMsg"), "Disconnected. Auto-connect is paused until you connect to a network again.", true); state = await api("GET", "/api/admin/wifi"); refreshNet(); }
   catch (err) { msg($("#upMsg"), err.message, false); }
 }));
 

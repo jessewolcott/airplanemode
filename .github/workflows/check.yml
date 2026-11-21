@@ -28,6 +28,13 @@ jobs:
           cp hardware/${{ matrix.hardware }}.env .env
           docker compose config --quiet
           docker compose config --services
+      - name: Caddyfile is valid for ${{ matrix.hardware }} (and for dev)
+        run: |
+          lan_ip=$(grep -E '^LAN_IP=' .env | cut -d= -f2)
+          for ip in "$lan_ip" 127.0.0.1; do
+            docker run --rm -e LAN_IP="$ip" -e HTTP_PORT=8080 -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" \
+              caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+          done
       - name: Every portal app has a proxy route
         run: |
           for path in $(jq -r '.[].path' portal/apps.json); do

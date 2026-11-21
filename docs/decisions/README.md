@@ -11,3 +11,5 @@ rewriting history.
 | [0003](0003-shared-model-service.md) | One shared language model, served by llama.cpp |
 | [0004](0004-offline-first.md) | Download while online, run without |
 | [0005](0005-front-door.md) | Caddy on 8080, apps under path prefixes |
+| [0006](0006-router-control-via-ubus.md) | Control the router through its own API (ubus), not a privileged container |
+| [0007](0007-shared-captive-portal-sign-in.md) | One sign-in for everyone: NAT plus captive-portal detection |

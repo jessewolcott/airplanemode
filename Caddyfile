@@ -13,7 +13,16 @@
 		reverse_proxy darklight:8000
 	}
 
-	# ---- portal ----
+	# ---- platform: status API and admin panel (reserved paths: no app may use /api or /admin) ----
+	redir /admin /admin/
+	handle /api/* {
+		reverse_proxy admin:8000
+	}
+	handle /admin/* {
+		reverse_proxy admin:8000
+	}
+
+	# ---- landing page + app menu ----
 	handle {
 		root * /srv/portal
 		file_server

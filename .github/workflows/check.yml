@@ -5,6 +5,17 @@ on:
   pull_request:
 
 jobs:
+  admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r admin/requirements.txt
+      - name: Admin API tests (mock router)
+        run: python admin/tests/test_admin.py
+
   compose:
     runs-on: ubuntu-latest
     strategy:
@@ -27,5 +38,6 @@ jobs:
       - name: Pinned images have arm64 builds
         run: |
           for img in $(docker compose --profile llm config --images); do
+            case "$img" in *:local) continue ;; esac   # built on the box from this repo
             docker manifest inspect "$img" | grep -q '"arm64"' || { echo "$img has no arm64 image"; exit 1; }
           done

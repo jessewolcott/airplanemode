@@ -1,8 +1,19 @@
-# Local development: build apps from sibling checkouts instead of pulling released images.
+# Local development: build apps from sibling checkouts instead of pulling released images,
+# and run the admin service against a pretend router (with a fake hotel sign-in page).
 #   docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 # Expects the app repos next to this one, e.g. ../airplanemode-darklight
+# Admin password in dev: "dev" (unless ADMIN_PASSWORD is set in .env).
 
 services:
+  proxy:
+    ports: !override
+      - "${HTTP_PORT:-8080}:80"
+
+  admin:
+    environment:
+      ROUTER_BACKEND: mock
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-dev}
+
   darklight:
     image: airplanemode-darklight:dev
     build: ../airplanemode-darklight

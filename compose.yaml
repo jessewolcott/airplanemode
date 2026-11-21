@@ -10,13 +10,32 @@ services:
   # Front door: the portal page plus one path per app (see Caddyfile).
   proxy:
     image: caddy:2.8-alpine
+    # Bound to the router's LAN address only. Docker's own firewall rules can bypass
+    # OpenWrt's, so binding to 0.0.0.0 could expose this port to the hotel network.
     ports:
-      - "${HTTP_PORT:-8080}:80"
+      - "${LAN_IP:-127.0.0.1}:${HTTP_PORT:-8080}:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./portal:/srv/portal:ro
       - caddy-data:/data
     mem_limit: ${PROXY_MEM:-64m}
+    restart: unless-stopped
+
+  # Landing-page status, captive-portal check, and the admin panel (Wi-Fi settings).
+  # Built from this repo. It changes router settings through the router's own ubus API,
+  # so it needs no privileges, just the router's address and a login (see .env).
+  admin:
+    build: ./admin
+    image: airplanemode-admin:local
+    environment:
+      ROUTER_BACKEND: ${ROUTER_BACKEND:-openwrt}
+      ROUTER_URL: ${ROUTER_URL:-http://host.docker.internal/ubus}
+      ROUTER_USER: ${ROUTER_USER:-root}
+      ROUTER_PASSWORD: ${ROUTER_PASSWORD:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: ${ADMIN_MEM:-96m}
     restart: unless-stopped
 
   # Shared language model. Only runs when COMPOSE_PROFILES includes "llm" (NanoPi R6S profile).

@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>AirplaneMode Admin</title>
+<style>
+  :root {
+    --bg: #0d0f12; --panel: #14171c; --panel2: #1a1e24; --line: #252a32; --line2: #333a44;
+    --ink: #e4dfd3; --dim: #8f8c84; --accent: #f2b34b; --good: #7bc47f; --bad: #e07a6a;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 16px 60px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+  h1 { font-size: 1.3rem; margin: 0; } h1 span { color: var(--accent); } h1 small { color: var(--dim); font-weight: 400; font-size: .85rem; margin-left: 6px; }
+  header nav { display: flex; gap: 8px; }
+  a.link, button.link { color: var(--dim); font: .8rem var(--mono); text-decoration: none; background: none; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  a.link:hover, button.link:hover { color: var(--ink); border-color: var(--dim); }
+
+  section.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+  section.card > h2 { margin: 0 0 4px; font-size: 1.05rem; }
+  section.card > p.lead { margin: 0 0 14px; color: var(--dim); font-size: .9rem; }
+  label { display: block; font-size: .8rem; color: var(--dim); margin-bottom: 4px; }
+  input, select { width: 100%; font: .95rem var(--sans); color: var(--ink); background: var(--bg); border: 1px solid var(--line2); border-radius: 7px; padding: 9px 11px; }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .btn { font: 600 .9rem var(--sans); padding: 9px 14px; border-radius: 7px; border: 1px solid var(--line2); background: var(--panel2); color: var(--ink); cursor: pointer; }
+  .btn:hover { border-color: var(--dim); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #1a1408; }
+  .btn.danger { color: var(--bad); border-color: #5a2f2a; background: transparent; }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .pw { position: relative; } .pw input { padding-right: 58px; }
+  .pw button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font: .72rem var(--mono); color: var(--dim); background: none; border: 0; cursor: pointer; padding: 4px; }
+  .note { font-size: .82rem; color: var(--dim); }
+  .warn { font-size: .82rem; color: #d8b26b; }
+  .msg { font-size: .85rem; margin-top: 10px; min-height: 1.2em; }
+  .msg.ok { color: var(--good); } .msg.err { color: var(--bad); }
+
+  .state { display: flex; gap: 10px; align-items: center; padding: 10px 12px; background: var(--panel2); border-radius: 8px; margin-bottom: 14px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dim); flex: none; }
+  .dot.online { background: var(--good); } .dot.captive { background: var(--accent); } .dot.offline { background: var(--bad); }
+
+  table.nets { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: .9rem; }
+  .nets td { padding: 8px 6px; border-top: 1px solid var(--line); }
+  .nets tr { cursor: pointer; } .nets tr:hover td { background: var(--panel2); }
+  .nets tr.sel td { background: #2a2416; }
+  .nets .sig { font-family: var(--mono); font-size: .78rem; color: var(--dim); white-space: nowrap; }
+  .bars { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; margin-right: 6px; vertical-align: -1px; }
+  .bars i { width: 3px; background: var(--line2); border-radius: 1px; } .bars i.on { background: var(--ink); }
+  .lock { font-size: .75rem; color: var(--dim); }
+
+  .hs { border: 1px solid var(--line); border-radius: 9px; padding: 14px; margin-top: 12px; background: var(--bg); }
+  .hs-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .hs-head b { font-size: .95rem; } .hs-head .note { font-family: var(--mono); }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--ink); cursor: pointer; margin: 0; }
+  .toggle input { width: auto; accent-color: var(--accent); }
+  details summary { cursor: pointer; color: var(--dim); font-size: .85rem; margin-top: 12px; }
+  .apps a { color: var(--ink); } .apps li { margin: 4px 0; } .apps li span { color: var(--dim); font-size: .85rem; }
+
+  #login { max-width: 360px; margin: 60px auto; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Airplane<span>Mode</span> <small>admin</small></h1>
+    <nav><a class="link" href="/">home</a><button class="link hidden" id="logout" type="button">sign out</button></nav>
+  </header>
+
+  <!-- sign in -->
+  <section class="card" id="login">
+    <h2>Sign in</h2>
+    <p class="lead">Enter the admin password set in the box's <code>.env</code> file.</p>
+    <form id="loginForm">
+      <label for="pw">Admin password</label>
+      <div class="pw"><input id="pw" type="password" autocomplete="current-password" required><button type="button" data-show="pw">show</button></div>
+      <div class="row"><button class="btn primary">Sign in</button></div>
+      <div class="msg" id="loginMsg"></div>
+    </form>
+  </section>
+
+  <div id="panel" class="hidden">
+    <!-- upstream -->
+    <section class="card">
+      <h2>Internet source</h2>
+      <p class="lead">The Wi-Fi network this box joins (hotel, airport, plane). Everyone on your hotspots shares it.</p>
+      <div class="state"><span class="dot" id="netDot"></span><span id="netText">Checking…</span></div>
+      <div class="row" id="captiveRow" style="margin-top:0;margin-bottom:12px">
+        <a class="btn primary" id="captiveLink" target="_blank" rel="noopener">Open the sign-in page</a>
+        <span class="note">One sign-in here covers every device on AirplaneMode.</span>
+      </div>
+      <div class="grid">
+        <div><label for="scanRadio">Radio to use</label><select id="scanRadio"></select></div>
+        <div style="align-self:end"><button class="btn" id="scanBtn" type="button">Scan for networks</button></div>
+      </div>
+      <table class="nets" id="nets"></table>
+      <form id="joinForm" class="hidden">
+        <div class="grid" style="margin-top:14px">
+          <div><label for="upSsid">Network name</label><input id="upSsid" required maxlength="32"></div>
+          <div><label for="upSec">Security</label>
+            <select id="upSec"><option value="none">Open (no password)</option><option value="psk2">WPA2</option>
+              <option value="sae-mixed">WPA2/WPA3</option><option value="sae">WPA3</option><option value="psk-mixed">WPA/WPA2</option><option value="psk">WPA (old)</option></select></div>
+          <div id="upKeyWrap"><label for="upKey">Wi-Fi password</label><div class="pw"><input id="upKey" type="password" autocomplete="off"><button type="button" data-show="upKey">show</button></div></div>
+        </div>
+        <details><summary>Advanced: use another device's MAC address</summary>
+          <p class="note">Some hotels tie the login to one device or limit devices per room. Signing in once on your phone, then entering your phone's Wi-Fi MAC address here, makes the box look like that phone to the hotel.</p>
+          <label for="upMac">MAC address to clone (optional)</label><input id="upMac" placeholder="aa:bb:cc:dd:ee:ff" autocomplete="off">
+        </details>
+        <div class="row"><button class="btn primary" id="joinBtn">Connect</button><button class="btn danger" id="leaveBtn" type="button">Disconnect</button></div>
+      </form>
+      <div class="msg" id="upMsg"></div>
+    </section>
+
+    <!-- hotspots -->
+    <section class="card">
+      <h2>Your hotspots</h2>
+      <p class="lead">The networks this box broadcasts for your own devices. Changing the one you're connected to will disconnect you; reconnect with the new name and password.</p>
+      <div id="hotspots"></div>
+      <details id="addWrap"><summary>Add a hotspot</summary>
+        <form id="addForm" class="hs">
+          <div class="grid">
+            <div><label for="addRadio">Radio</label><select id="addRadio"></select></div>
+            <div><label for="addSsid">Network name</label><input id="addSsid" required maxlength="32"></div>
+            <div><label for="addSec">Security</label><select id="addSec" data-sec></select></div>
+            <div><label for="addKey">Password</label><div class="pw"><input id="addKey" type="password" autocomplete="new-password"><button type="button" data-show="addKey">show</button></div></div>
+          </div>
+          <div class="row"><button class="btn primary">Add hotspot</button></div>
+          <div class="msg" id="addMsg"></div>
+        </form>
+      </details>
+    </section>
+
+    <!-- apps -->
+    <section class="card">
+      <h2>Installed apps</h2>
+      <p class="lead">Apps are installed by version in the platform repo's <code>compose.yaml</code>; run <code>scripts/update.sh</code> while online to change them.</p>
+      <ul class="apps" id="apps"></ul>
+    </section>
+  </div>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const HOTSPOT_SEC = [["sae-mixed", "WPA2/WPA3 (recommended)"], ["psk2", "WPA2"], ["sae", "WPA3 only"], ["none", "Open (no password)"]];
+let state = null, picked = null;
+
+async function api(method, url, body) {
+  const r = await fetch(url, { method, headers: { "Content-Type": "application/json", "X-AirplaneMode": "1" }, body: body ? JSON.stringify(body) : undefined });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 401 && url !== "/api/admin/login") { showLogin(); throw new Error(d.detail || "Please sign in."); }
+  if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : (d.detail ? "Check the fields and try again." : r.statusText));
+  return d;
+}
+function msg(el, text, ok) { el.textContent = text; el.className = "msg " + (ok ? "ok" : "err"); }
+async function busy(btn, fn) { btn.disabled = true; try { await fn(); } finally { btn.disabled = false; } }
+function bars(sig) { const n = sig >= -55 ? 4 : sig >= -65 ? 3 : sig >= -75 ? 2 : 1; return `<span class="bars">${[4, 7, 10, 12].map((h, i) => `<i class="${i < n ? "on" : ""}" style="height:${h}px"></i>`).join("")}</span>`; }
+function secLabel(s) { return { none: "open", psk: "WPA", psk2: "WPA2", "psk-mixed": "WPA/WPA2", sae: "WPA3", "sae-mixed": "WPA2/WPA3" }[s] || "unsupported"; }
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-show]"); if (!b) return;
+  const i = document.getElementById(b.dataset.show) || b.parentElement.querySelector("input");
+  i.type = i.type === "password" ? "text" : "password"; b.textContent = i.type === "password" ? "show" : "hide";
+});
+
+function showLogin() { $("#login").classList.remove("hidden"); $("#panel").classList.add("hidden"); $("#logout").classList.add("hidden"); $("#pw").focus(); }
+function showPanel() { $("#login").classList.add("hidden"); $("#panel").classList.remove("hidden"); $("#logout").classList.remove("hidden"); }
+
+$("#loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  try { await api("POST", "/api/admin/login", { password: $("#pw").value }); $("#pw").value = ""; await load(); }
+  catch (err) { msg($("#loginMsg"), err.message, false); }
+});
+$("#logout").addEventListener("click", async () => { try { await api("POST", "/api/admin/logout"); } catch {} showLogin(); });
+
+async function load() {
+  state = await api("GET", "/api/admin/wifi");
+  showPanel();
+  const radioOpts = state.radios.map(r => `<option value="${esc(r.id)}">${esc(r.id)} · ${esc(r.band)}${r.disabled ? " (off)" : ""}</option>`).join("");
+  $("#scanRadio").innerHTML = radioOpts; $("#addRadio").innerHTML = radioOpts;
+  if (state.upstream) $("#scanRadio").value = state.upstream.radio;
+  $("#addSec").innerHTML = HOTSPOT_SEC.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+  renderHotspots();
+  if (state.upstream && !picked) fillJoin({ ssid: state.upstream.ssid, security: state.upstream.encryption }, state.upstream.macaddr);
+  await refreshNet();
+}
+
+async function refreshNet() {
+  const s = await (await fetch("/api/status?refresh=1")).json();
+  const up = state.upstream_status || {};
+  const text = { online: `Online through <b>${esc(s.upstream.ssid || "upstream Wi-Fi")}</b>`, captive: `Connected to <b>${esc(s.upstream.ssid || "upstream Wi-Fi")}</b>, but it needs a sign-in`, offline: up.connected ? `Connected to <b>${esc(up.ssid)}</b> but no internet` : (state.upstream && !state.upstream.disabled ? `Trying to connect to <b>${esc(state.upstream.ssid)}</b>…` : "Not connected to any upstream Wi-Fi") }[s.internet];
+  $("#netDot").className = "dot " + s.internet; $("#netText").innerHTML = text + (up.ip ? ` <span class="note">· ${esc(up.ip)}</span>` : "");
+  $("#captiveRow").classList.toggle("hidden", s.internet !== "captive");
+  if (s.login_url) $("#captiveLink").href = s.login_url;
+}
+
+$("#scanBtn").addEventListener("click", e => busy(e.target, async () => {
+  $("#nets").innerHTML = `<tr><td class="note">Scanning… (a few seconds)</td></tr>`;
+  try {
+    const { networks } = await api("POST", "/api/admin/scan", { radio: $("#scanRadio").value });
+    $("#nets").innerHTML = networks.length ? networks.map((n, i) => `<tr data-i="${i}"><td>${esc(n.ssid)}</td><td class="lock">${secLabel(n.security)}</td><td class="sig">${bars(n.signal)}${n.signal ?? "?"} dBm · ch ${esc(n.channel)}</td></tr>`).join("") : `<tr><td class="note">No networks found. Try the other radio.</td></tr>`;
+    $("#nets").onclick = ev => { const tr = ev.target.closest("tr[data-i]"); if (!tr) return; document.querySelectorAll("#nets tr").forEach(t => t.classList.remove("sel")); tr.classList.add("sel"); fillJoin(networks[+tr.dataset.i]); $("#upKey").focus(); };
+    $("#joinForm").classList.remove("hidden");
+  } catch (err) { $("#nets").innerHTML = ""; msg($("#upMsg"), err.message, false); }
+}));
+
+function fillJoin(n, mac) {
+  picked = n; $("#joinForm").classList.remove("hidden");
+  $("#upSsid").value = n.ssid || "";
+  if (n.security) $("#upSec").value = n.security;
+  if (n.security === null) msg($("#upMsg"), "That network uses enterprise sign-in (802.1X), which isn't supported.", false);
+  $("#upKey").value = ""; if (mac !== undefined) $("#upMac").value = mac || "";
+  syncKey();
+}
+function syncKey() { $("#upKeyWrap").classList.toggle("hidden", $("#upSec").value === "none"); }
+$("#upSec").addEventListener("change", syncKey);
+
+$("#joinForm").addEventListener("submit", e => { e.preventDefault(); busy($("#joinBtn"), async () => {
+  try {
+    await api("POST", "/api/admin/upstream", { radio: $("#scanRadio").value, ssid: $("#upSsid").value, encryption: $("#upSec").value, key: $("#upKey").value || null, macaddr: $("#upMac").value || null });
+    msg($("#upMsg"), "Saved. Connecting… this takes about 10-20 seconds.", true);
+    state = await api("GET", "/api/admin/wifi");
+    setTimeout(async () => { state = await api("GET", "/api/admin/wifi"); refreshNet(); }, 8000);
+    refreshNet();
+  } catch (err) { msg($("#upMsg"), err.message, false); }
+}); });
+$("#leaveBtn").addEventListener("click", e => busy(e.target, async () => {
+  try { await api("DELETE", "/api/admin/upstream"); msg($("#upMsg"), "Disconnected from the upstream Wi-Fi.", true); state = await api("GET", "/api/admin/wifi"); refreshNet(); }
+  catch (err) { msg($("#upMsg"), err.message, false); }
+}));
+
+function renderHotspots() {
+  $("#hotspots").innerHTML = state.hotspots.map(h => {
+    const radio = state.radios.find(r => r.id === h.radio);
+    return `<form class="hs" data-id="${esc(h.id)}">
+      <div class="hs-head"><b>${esc(h.ssid)}</b><span class="note">${esc(h.radio)} · ${esc(radio ? radio.band : "?")}</span></div>
+      <div class="grid">
+        <div><label>Network name</label><input name="ssid" value="${esc(h.ssid)}" required maxlength="32"></div>
+        <div><label>Security</label><select name="encryption">${HOTSPOT_SEC.map(([v, l]) => `<option value="${v}" ${v === h.encryption ? "selected" : ""}>${l}</option>`).join("")}${HOTSPOT_SEC.some(([v]) => v === h.encryption) ? "" : `<option value="${esc(h.encryption)}" selected>${esc(h.encryption)} (current)</option>`}</select></div>
+        <div class="keywrap"><label>Password</label><div class="pw"><input name="key" type="password" value="${esc(h.key)}" autocomplete="off"><button type="button" data-show>show</button></div></div>
+      </div>
+      <div class="row">
+        <label class="toggle"><input type="checkbox" name="enabled" ${h.disabled ? "" : "checked"}> On</label>
+        <button class="btn primary">Save</button>
+        <button class="btn danger" type="button" data-del>Remove</button>
+      </div>
+      <div class="msg"></div>
+    </form>`;
+  }).join("") || `<p class="note">No hotspots configured.</p>`;
+  document.querySelectorAll("#hotspots form").forEach(f => {
+    const sync = () => f.querySelector(".keywrap").classList.toggle("hidden", f.encryption.value === "none");
+    f.encryption.addEventListener("change", sync); sync();
+    f.addEventListener("submit", e => { e.preventDefault(); busy(f.querySelector(".btn.primary"), async () => {
+      try {
+        await api("PUT", `/api/admin/hotspots/${encodeURIComponent(f.dataset.id)}`, { ssid: f.ssid.value, encryption: f.encryption.value, key: f.key.value || null, disabled: !f.enabled.checked });
+        msg(f.querySelector(".msg"), "Saved. Devices on this hotspot will reconnect.", true);
+        state = await api("GET", "/api/admin/wifi"); f.querySelector(".hs-head b").textContent = f.ssid.value;
+      } catch (err) { msg(f.querySelector(".msg"), err.message, false); }
+    }); });
+    f.querySelector("[data-del]").addEventListener("click", e => busy(e.target, async () => {
+      if (!confirm(`Remove the hotspot "${f.ssid.value}"? Devices on it will be disconnected.`)) return;
+      try { await api("DELETE", `/api/admin/hotspots/${encodeURIComponent(f.dataset.id)}`); state = await api("GET", "/api/admin/wifi"); renderHotspots(); }
+      catch (err) { msg(f.querySelector(".msg"), err.message, false); }
+    }));
+  });
+}
+
+$("#addSec").addEventListener("change", () => $("#addKey").closest("div").parentElement.classList.toggle("hidden", $("#addSec").value === "none"));
+$("#addForm").addEventListener("submit", e => { e.preventDefault(); busy(e.submitter || $("#addForm button.primary"), async () => {
+  try {
+    await api("POST", "/api/admin/hotspots", { radio: $("#addRadio").value, ssid: $("#addSsid").value, encryption: $("#addSec").value, key: $("#addKey").value || null });
+    $("#addForm").reset(); msg($("#addMsg"), "Hotspot added.", true);
+    state = await api("GET", "/api/admin/wifi"); renderHotspots();
+  } catch (err) { msg($("#addMsg"), err.message, false); }
+}); });
+
+fetch("/apps.json").then(r => r.json()).then(apps => {
+  $("#apps").innerHTML = apps.map(a => `<li><a href="${esc(a.path)}">${esc(a.name)}</a> <span>· ${esc(a.path)}${a.uses_llm ? " · uses the model" : ""}</span></li>`).join("") || "<li class='note'>No apps installed.</li>";
+}).catch(() => {});
+
+load().catch(() => showLogin());
+</script>
+</body>
+</html>

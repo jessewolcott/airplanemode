@@ -11,7 +11,8 @@ box is three small edits in this repo and nothing else.
    versions, never `latest` or `main`.
 2. **One HTTP port inside the container.** It isn't published to the host: the proxy reaches
    it on the internal `airplanemode` network as `http://<id>:<port>`.
-3. **Works under a path prefix.** The proxy serves the app at `/<id>/` and strips the prefix,
+3. **Works under a path prefix.** The ids `api` and `admin` are reserved for the platform.
+   The proxy serves the app at `/<id>/` and strips the prefix,
    so the app sees `/` as usual. The page must use **relative** URLs (`api/turn`, not
    `/api/turn`) so the browser keeps the prefix.
 4. **Fully offline.** No CDNs, web fonts, analytics or outside APIs at runtime. Bundle every

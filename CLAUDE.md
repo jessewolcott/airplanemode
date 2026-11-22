@@ -3,7 +3,7 @@
 Self-hosted, offline-first apps for a travel router (NanoPi R6S main target, GL.iNet lite).
 This repo is the **platform**: landing page, admin service (Wi-Fi control + connectivity
 supervisor), Caddy front door, shared llama.cpp model, hardware profiles, docs. Apps live in
-their own repos (today: `../airplanemode-darklight`) and plug in as pinned container images.
+their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airplanemode-guide`) and plug in as pinned container images.
 Start with `README.md`, then `docs/decisions/` (0001–0009). They explain *why* things are
 the way they are.
 
@@ -108,6 +108,9 @@ Done and pushed (CI green):
 - rebind-off and DNS fixes;
 - hardening pass (router_lock, lockout guard on radios that are off, login throttling, CI v7);
 - home VPN (WireGuard), connected devices with pause, data use per network (decision 0010).
+- apps Drop (`../airplanemode-drop`) and Travel Guide (`../airplanemode-guide`), both 0.1.0;
+  project icon (`portal/icon.svg`), screenshots in `docs/screenshots/` (retake from the dev
+  stack when the UI changes), app ideas in `docs/app-ideas.md`.
 
 **No real hardware has been tested yet.** The R6S and adapters aren't bought. Parts:
 - NanoPi R6S 8 GB with the metal case,

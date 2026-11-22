@@ -99,6 +99,15 @@ services:
     mem_limit: ${DROP_MEM:-128m}
     restart: unless-stopped
 
+  guide:
+    image: ghcr.io/jessewolcott/airplanemode-guide:0.1.0
+    environment:
+      LLM_URL: ${LLM_URL-http://llm:8080}
+    volumes:
+      - guide-data:/data            # the offline guide (~260 MB), downloaded by update.sh's run
+    mem_limit: ${GUIDE_MEM:-256m}
+    restart: unless-stopped
+
 networks:
   default:
     name: airplanemode
@@ -108,3 +117,4 @@ volumes:
   caddy-data:
   admin-data:
   drop-data:
+  guide-data:

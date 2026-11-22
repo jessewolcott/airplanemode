@@ -1,3 +1,5 @@
+<p align="center"><img src="portal/icon.svg" width="112" alt="AirplaneMode icon"></p>
+
 # AirplaneMode
 
 **A travel router that brings its own apps.** AirplaneMode turns a small router into a
@@ -19,13 +21,30 @@ private hotspot for your devices that:
 - **has a simple admin panel** for picking the network to join, the VPN, devices and your
   hotspots, from any phone.
 
+<p align="center">
+  <img src="docs/screenshots/landing-online.png" width="230" alt="Landing page: online through the home VPN, with the app menu">
+  <img src="docs/screenshots/landing-signin.png" width="230" alt="Landing page: this Wi-Fi needs a sign-in">
+  <img src="docs/screenshots/admin-vpn-devices.png" width="230" alt="Admin panel: home VPN, connected devices, data use">
+</p>
+<p align="center">
+  <img src="docs/screenshots/guide-ask.png" width="230" alt="Travel Guide answering a question from Wikivoyage">
+  <img src="docs/screenshots/drop.png" width="230" alt="Drop: files and notes shared between devices">
+</p>
+
+<sub>Screenshots from the laptop dev stack (mock router); real hardware not tested yet.</sub>
+
 This is the **platform repo**: the landing page, admin panel, shared services, hardware
 profiles and design docs. Each app lives in its own repo and plugs in as a container image.
 
 | Repo | What it is |
 |---|---|
 | [airplanemode](https://github.com/jessewolcott/airplanemode) | this repo: landing page, admin panel, router control, shared model, docs |
-| [airplanemode-darklight](https://github.com/jessewolcott/airplanemode-darklight) | *The Dark Light*, a text adventure narrated by the on-board model |
+| [airplanemode-darklight](https://github.com/jessewolcott/airplanemode-darklight) | *The Dark Light*, text adventures narrated by the on-board model |
+| [airplanemode-drop](https://github.com/jessewolcott/airplanemode-drop) | *Drop*: pass files and notes between every device on the hotspot, keep movies for the flight |
+| [airplanemode-guide](https://github.com/jessewolcott/airplanemode-guide) | *Travel Guide*: all of Wikivoyage offline, plus "ask the guide" with the on-board model |
+
+More app ideas (offline maps, a translator, a cinema, a trip kit…) are in
+[docs/app-ideas.md](docs/app-ideas.md).
 
 ## How it works
 
@@ -40,7 +59,7 @@ flowchart LR
             caddy["Caddy :8080<br/>landing page"]
             admin["admin<br/>status + Wi-Fi settings"]
             llm["llm<br/>Qwen2.5-1.5B"]
-            apps["apps<br/>/darklight/ ..."]
+            apps["apps<br/>/darklight/ /drop/ /guide/"]
         end
     end
     devices["Your phones, laptops, tablets"]
@@ -142,7 +161,7 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
 3. **Set a root password** in LuCI (System → Administration), if you haven't already. It
    stays yours: AirplaneMode gets its own, more limited login in step 5.
 4. **Get the box online once,** by Ethernet or by joining a Wi-Fi network in LuCI. Setup
-   downloads about 1.5 GB of images and model files.
+   downloads about 1.8 GB of images, model and Wikivoyage files.
 5. **Install AirplaneMode** from the router's shell (SSH in as root):
 
    ```sh
@@ -222,6 +241,7 @@ scripts/update.sh     pull, build, start, pre-download the model while online
 scripts/router-setup.sh  prepare the router: Wi-Fi-only login, DNS, Ethernet priority (as root)
 router/               the access list for that login
 docs/app-contract.md  what an app must do to plug in
+docs/app-ideas.md     apps worth building next
 docs/hardware.md      device setup details and caveats
 docs/testing.md       how to test, and the on-device checklist
 docs/decisions/       why things are the way they are

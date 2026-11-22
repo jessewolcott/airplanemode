@@ -26,6 +26,11 @@
 		reverse_proxy drop:8000
 	}
 
+	redir /guide /guide/
+	handle_path /guide/* {
+		reverse_proxy guide:8000
+	}
+
 	# ---- platform: status API and admin panel (reserved paths: no app may use /api or /admin) ----
 	redir /admin /admin/
 	handle /api/* {

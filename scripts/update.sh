@@ -39,6 +39,16 @@ if docker compose config --services | grep -qx llm; then
   echo "Model ready."
 fi
 
+if docker compose config --services | grep -qx guide; then
+  echo "Waiting for the Travel Guide to download Wikivoyage (~260 MB, first run only)..."
+  i=0
+  until docker compose exec -T admin python -c "import json, urllib.request, sys; sys.exit(0 if json.load(urllib.request.urlopen('http://guide:8000/health', timeout=3)).get('content_ready') else 1)" 2>/dev/null; do
+    i=$((i + 1)); [ "$i" -gt 240 ] && { echo "Travel Guide not ready after 20 minutes; check: docker compose logs guide" >&2; break; }
+    sleep 5
+  done
+  if [ "$i" -le 240 ]; then echo "Travel Guide ready."; fi
+fi
+
 docker image prune -f >/dev/null
 port=$(grep -E '^HTTP_PORT=' .env | cut -d= -f2)
 echo "AirplaneMode is up: http://<box-ip>:${port:-8080}/  (admin: /admin/)"

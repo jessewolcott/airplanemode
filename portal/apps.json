@@ -18,5 +18,15 @@
     "color": "#5fb8c9",
     "category": "Tools",
     "uses_llm": false
+  },
+  {
+    "id": "guide",
+    "name": "Travel Guide",
+    "description": "All of Wikivoyage, offline. Look up any destination, or ask a question and get an answer from the guide.",
+    "path": "/guide/",
+    "monogram": "TG",
+    "color": "#5ec4b6",
+    "category": "Travel",
+    "uses_llm": true
   }
 ]

@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0d0f12">
 <title>AirplaneMode Admin</title>
 <style>
   :root {
@@ -31,7 +34,7 @@
   .tag { display: inline-block; font: .68rem var(--mono); color: var(--dim); border: 1px solid var(--line2); border-radius: 4px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
   .tag.you { color: var(--accent); border-color: #5b4a2c; } .tag.paused { color: var(--bad); border-color: #5a2f2a; }
   ul.saved li .sub { display: block; font: .75rem var(--mono); color: var(--dim); }
-  .num { font-family: var(--mono); font-size: .82rem; color: var(--dim); white-space: nowrap; }
+  .num { font-family: var(--mono); font-size: .85rem; color: var(--ink); white-space: nowrap; text-align: right; flex: none; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
   .btn { font: 600 .9rem var(--sans); padding: 9px 14px; border-radius: 7px; border: 1px solid var(--line2); background: var(--panel2); color: var(--ink); cursor: pointer; }
   .btn:hover { border-color: var(--dim); }
@@ -423,7 +426,7 @@ async function loadUsage() {
   const c = u.current;
   $("#usageNow").innerHTML = c ? `<span>On <b>${esc(c.name)}</b> since ${new Date(c.since * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}: <b>${fmtBytes(c.rx + c.tx)}</b> <span class="note">(↓ ${fmtBytes(c.rx)} ↑ ${fmtBytes(c.tx)})</span></span>`
     : `<span class="note">${u.linked ? "Measuring… (the first numbers show up within a minute)" : "Not connected right now."}</span>`;
-  $("#usageList").innerHTML = u.networks.map(n => `<li><span>${esc(n.name)}<span class="sub">since ${new Date(n.first * 1000).toLocaleDateString()}</span></span><span class="num">${fmtBytes(n.rx + n.tx)} · ↓ ${fmtBytes(n.rx)} ↑ ${fmtBytes(n.tx)}</span></li>`).join("")
+  $("#usageList").innerHTML = u.networks.map(n => `<li><span>${esc(n.name)}<span class="sub">since ${new Date(n.first * 1000).toLocaleDateString()}</span></span><span class="num">${fmtBytes(n.rx + n.tx)}<span class="sub">↓ ${fmtBytes(n.rx)} ↑ ${fmtBytes(n.tx)}</span></span></li>`).join("")
     || `<li class="note">Nothing measured yet.</li>`;
 }
 $("#usageReset").addEventListener("click", e => busy(e.target, async () => {

@@ -25,3 +25,7 @@ services:
   drop:
     image: airplanemode-drop:dev
     build: ../airplanemode-drop
+
+  guide:
+    image: airplanemode-guide:dev
+    build: ../airplanemode-guide

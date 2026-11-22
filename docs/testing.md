@@ -137,5 +137,7 @@ Things only real hardware can prove. Tick them off here as they're verified.
 - [ ] **The Couch:** replies stream with the R6S model (note seconds to first word), the
       offline mind takes over while the guide's "ask" keeps the model busy, and a crisis
       message shows the resources card.
-- [ ] The model's speed on the R6S (tokens/s). Update decision 0003 with the number.
+- [ ] The model's speed on the R6S (tokens/s, Gemma 4 E2B) and its memory under `LLM_MEM=3500m`,
+      including the first answers after a reboot (the 3.1 GB file is read from eMMC as needed).
+      Try Google's QAT Q4_0 build too. Record the numbers in a new decision (see 0018).
 - [ ] Temperature and power draw with both adapters and the model busy.

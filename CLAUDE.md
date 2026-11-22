@@ -147,6 +147,7 @@ Done and pushed (CI green):
   phone size, not on real phones. Released: all four 0.1.0. The homepage lists all ten apps
   (cards generated from `portal/apps.json`).
 - GL.iNet lite profile without the model apps (decision 0017).
+- Shared model switched to Gemma 4 E2B after comparing six models (decision 0018).
 
 **No real hardware has been tested yet.** The R6S and adapters aren't bought. Parts:
 - NanoPi R6S 8 GB with the metal case,
@@ -157,10 +158,10 @@ Done and pushed (CI green):
 
 Open follow-ups:
 1. Work through `docs/testing.md` → *On the device: checklist* once hardware arrives.
-2. Choose a better shared model than Qwen2.5-1.5B. A desktop eval (2026-11-22) put Gemma 4 E2B
-   ahead on narration and the Couch personas; Qwen3.5's chat template rejects The Couch's
-   per-turn system nudge (merge it into the user turn first). R6S speeds still unmeasured.
-3. Measure model tokens/s on the R6S, update decision 0003, and maybe spike RKLLM (NPU).
+2. Recheck the apps' prompts on Gemma 4 E2B (decision 0018): Dark Light's model verbs override a
+   right keyword fallback; the Guide's answer check rejects "the guide doesn't cover this".
+3. Measure model tokens/s on the R6S (record it in a new decision), try the QAT Q4_0 build, and
+   maybe spike RKLLM (NPU).
 4. Home VPN: bypass the tunnel automatically for hotel sign-in pages (decision 0010).
 5. Narrow the restricted login's `network`/`firewall` write access (decision 0008
    consequences) if it ever matters.

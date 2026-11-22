@@ -67,7 +67,12 @@ services:
     profiles: ["llm"]
     command:
       - "-hf"
-      - "${LLM_MODEL:-Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M}"
+      - "${LLM_MODEL:-unsloth/gemma-4-E2B-it-GGUF:Q4_K_M}"
+      - "--no-mmproj"               # text only: don't fetch or load the ~1 GB vision projector
+      - "--reasoning"               # no "thinking" output; the apps want plain replies
+      - "off"
+      - "--cache-ram"               # host prompt cache; the default (8 GB) would outgrow mem_limit
+      - "256"
       - "--host"
       - "0.0.0.0"
       - "--port"
@@ -82,7 +87,7 @@ services:
       LLAMA_CACHE: /models
     volumes:
       - models:/models
-    mem_limit: ${LLM_MEM:-3g}
+    mem_limit: ${LLM_MEM:-3500m}
     restart: unless-stopped
 
   # ---- apps ----

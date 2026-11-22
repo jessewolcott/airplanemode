@@ -69,7 +69,7 @@ flowchart LR
         subgraph docker["Docker"]
             caddy["Caddy :8080<br/>landing page"]
             admin["admin<br/>status + Wi-Fi settings"]
-            llm["llm<br/>Qwen2.5-1.5B"]
+            llm["llm<br/>Gemma 4 E2B"]
             apps["apps<br/>/drop/ /guide/ /gatechange/ …"]
         end
     end
@@ -156,7 +156,7 @@ Couch) aren't installed; the other seven are. *Not yet tested on real GL.iNet ha
 | Landing page, app menu, sign-in flow, admin panel | tested end to end in the browser against the mock router |
 | Apps on the menu (admin switch), Drop folders + "downloads off", Cinema from Drop | automated tests; checked end to end in the browser on the dev stack |
 | Card games (Gate Change, Passport): rules, bots, tables shared over the hotspot | each app's tests (hundreds of bot games, rooms through the API); played at phone size on the dev stack, two players checked through the proxy |
-| Wayfarer, The Couch (with the 1.5B model, and its safety check) | each app's tests; played at phone size on the dev stack. Not yet on real phones |
+| Wayfarer, The Couch (with the shared model, and its safety check) | each app's tests; played at phone size on the dev stack. Not yet on real phones |
 | Admin API (auth, validation, lockout guard, captive flow) | automated tests, run in CI |
 | Router control (join, MAC clone, firewall, hotspots) | tested against a real OpenWrt 24.10 API in Docker (`admin/tests/test_openwrt_live.py`) |
 | Limited router login (`scripts/router-setup.sh`) | tested on real OpenWrt 24.10: every admin feature works, and 8 out-of-scope calls are refused |
@@ -165,7 +165,7 @@ Couch) aren't installed; the other seven are. *Not yet tested on real GL.iNet ha
 | Home VPN, device pause, data use (logic) | automated tests against the mock router; panel checked in the browser |
 | Router side of those (WireGuard interface + zone, pause rules, ACL) | tested on real OpenWrt 24.10 in Docker; ruleset passes nftables' syntax check |
 | Live link status, scanning, reloading Wi-Fi on real radios, a real tunnel, DHCP leases, byte counters | **needs a real device:** see the checklist in [docs/testing.md](docs/testing.md) |
-| Full stack with the 1.5B model | tested on a PC with Docker Desktop; speed on the R6S not yet measured |
+| Full stack with the model (Gemma 4 E2B; six models compared, decision 0018) | tested on a PC with Docker Desktop; speed on the R6S not yet measured |
 
 ## Set it up
 

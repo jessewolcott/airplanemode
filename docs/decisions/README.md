@@ -23,3 +23,4 @@ rewriting history.
 | [0015](0015-doom.md) | Doom: PrBoom+ in the browser with touch controls, Freedoom, and the Layover airport episode made in code |
 | [0016](0016-games-and-couch.md) | Gate Change and Passport (card games with rooms and bots), Wayfarer (trivia from Wikivoyage), The Couch (therapist simulator) |
 | [0017](0017-no-model-apps-on-lite.md) | No model apps (Dark Light, Travel Guide, The Couch) on the GL.iNet lite profile |
+| [0018](0018-gemma-4-e2b.md) | Shared model: Gemma 4 E2B instead of Qwen2.5-1.5B |

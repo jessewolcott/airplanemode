@@ -12,7 +12,7 @@ new router.
 ## Decision
 
 - A separate repo, **`airplanemode-site`**, published by GitHub Pages at
-  https://jessewolcott.github.io/airplanemode-site/. It holds a static homepage and
+  https://jessewolcott.com/airplanemode-site/. It holds a static homepage and
   `install.sh`. It's separate because it's the public front, changes on its own schedule,
   and publishing it shouldn't need a platform release.
 - The homepage has a setup guide per device (flash, first login, adapters, install, name the

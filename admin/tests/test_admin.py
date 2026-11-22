@@ -399,6 +399,23 @@ def test_apps_on_the_menu():
     assert ok(c.get("/api/apps")) == []                                                   # missing file: empty, not an error
 
 
+def test_model_apps_only_with_the_model():
+    apps = Path(main.DATA_DIR) / "apps-model.json"
+    apps.write_text('[{"id": "drop", "name": "Drop", "path": "/drop/", "uses_llm": false},'
+                    ' {"id": "couch", "name": "The Couch", "path": "/couch/", "uses_llm": true}]')
+    main.APPS_FILE = apps
+    try:
+        for profiles, want in [("llm", ["drop", "couch"]), ("", ["drop"]), ("other, llm", ["drop", "couch"]),
+                               ("llmx", ["drop"])]:
+            os.environ["COMPOSE_PROFILES"] = profiles
+            assert [a["id"] for a in ok(c.get("/api/apps"))] == want, profiles
+            assert [a["id"] for a in ok(c.get("/api/admin/apps"))["apps"]] == want, profiles
+        assert c.put("/api/admin/apps/couch", json={"enabled": False}, headers=H).status_code == 404   # not installed
+    finally:
+        os.environ.pop("COMPOSE_PROFILES", None)
+        main.APPS_FILE = Path("/nonexistent/apps.json")
+
+
 def test_logout():
     ok(c.post("/api/admin/logout", headers=H))
     assert c.get("/api/admin/wifi").status_code == 401

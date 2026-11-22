@@ -22,3 +22,4 @@ rewriting history.
 | [0014](0014-quickshot.md) | QuickShot: a swipe feed over a Drop folder, with comments in its own volume |
 | [0015](0015-doom.md) | Doom: PrBoom+ in the browser with touch controls, Freedoom, and the Layover airport episode made in code |
 | [0016](0016-games-and-couch.md) | Gate Change and Passport (card games with rooms and bots), Wayfarer (trivia from Wikivoyage), The Couch (therapist simulator) |
+| [0017](0017-no-model-apps-on-lite.md) | No model apps (Dark Light, Travel Guide, The Couch) on the GL.iNet lite profile |

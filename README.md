@@ -144,8 +144,9 @@ adapter can do both jobs, but both networks then share one channel and get slowe
 ### Lite: GL.iNet travel routers (no language model)
 
 GL.iNet routers already have Wi-Fi and their own repeater mode. AirplaneMode can run on
-**arm64** models with Docker installed on USB/SD storage, ideally with **1 GB of RAM**. Apps
-run in their plain mode, without the model. *Not yet tested on real GL.iNet hardware.* See
+**arm64** models with Docker installed on USB/SD storage, ideally with **1 GB of RAM**. There's
+no language model, and the three apps built around it (The Dark Light, the Travel Guide and The
+Couch) aren't installed; the other seven are. *Not yet tested on real GL.iNet hardware.* See
 [docs/hardware.md](docs/hardware.md) for the caveats.
 
 ## What's tested so far
@@ -286,8 +287,9 @@ docs/decisions/       why things are the way they are
    GitHub (anonymous pulls must work; the box doesn't log in to ghcr.io).
 3. Here: add the service to `compose.yaml`, a route to `Caddyfile`, and an entry to
    `portal/apps.json` (plus its icon in `portal/icons/`). The `check` workflow fails if
-   any of the three is missing, or if the pinned image has no arm64 build. Also add
-   `<ID>_MEM` to each `hardware/*.env`, a dev build to `compose.dev.yaml`, the repo to
+   any of the three is missing, or if the pinned image has no arm64 build. An app that uses
+   the model also gets `"uses_llm": true` and `profiles: ["llm"]` (it isn't installed on the
+   GL.iNet profile). Also add `<ID>_MEM` to each `hardware/*.env` that runs it, a dev build to `compose.dev.yaml`, the repo to
    `airplanemode.code-workspace` and the tables in this README, and a decision record.
 4. On the homepage (`airplanemode-site`): an app card with the same name, description and icon.
 

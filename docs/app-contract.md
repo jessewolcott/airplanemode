@@ -17,9 +17,10 @@ box is three small edits in this repo and nothing else.
    `/api/turn`) so the browser keeps the prefix.
 4. **Fully offline.** No CDNs, web fonts, analytics or outside APIs at runtime. Bundle every
    asset in the image.
-5. **Works without the model.** The shared model is optional (it doesn't exist on the GL.iNet
-   profile, and it can be busy or still loading). With `LLM_URL` empty or unreachable, the app
-   must still be usable, in a plainer mode.
+5. **Works without the model.** The model can be busy, still loading or down. With `LLM_URL`
+   empty or unreachable, the app must still be usable, in a plainer mode. An app that uses the
+   model sets `"uses_llm": true` in `portal/apps.json` and `profiles: ["llm"]` in `compose.yaml`:
+   it isn't installed on boxes without the model (the GL.iNet profile; decision 0017).
 6. **Stays inside its memory limit.** Declare it in `app.yaml`; the platform enforces it with
    `mem_limit`. Aim for 256 MB or less.
 7. **Small writes only.** Treat the root filesystem as disposable. If the app keeps data,

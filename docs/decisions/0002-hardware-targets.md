@@ -12,6 +12,7 @@ RAM, an RK3588S, and Docker out of the box on FriendlyWrt.
 
 - **NanoPi R6S** is the main target and the reference for performance and memory budgets.
 - **GL.iNet** arm64 models with Docker are a **lite** profile: same apps, no model.
+  (Since decision 0017: without the model apps either.)
 - **arm64 only** on the box. Images are also built for amd64 so laptops can run them.
 - Differences between devices live in `hardware/<device>.env` (compose profiles, memory
   limits, port, model settings), not in separate compose files.

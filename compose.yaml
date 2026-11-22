@@ -44,6 +44,9 @@ services:
       AUTOJOIN: ${AUTOJOIN:-1}
       OFFLINE_PORTAL: ${OFFLINE_PORTAL:-1}
       APPS_FILE: /config/apps.json
+      # Without the "llm" profile the model apps (uses_llm in apps.json) don't run, so the
+      # menu leaves them out too.
+      COMPOSE_PROFILES: ${COMPOSE_PROFILES:-}
     volumes:
       - admin-data:/data            # saved networks, apps hidden from the menu
       - ./portal/apps.json:/config/apps.json:ro   # the installed apps (restart admin after editing)
@@ -83,7 +86,9 @@ services:
     restart: unless-stopped
 
   # ---- apps ----
+  # Apps that need the model (darklight, guide, couch) run only with the "llm" profile.
   darklight:
+    profiles: ["llm"]           # model app: not on the GL.iNet (lite) profile
     image: ghcr.io/jessewolcott/airplanemode-darklight:0.3.0
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}
@@ -132,6 +137,7 @@ services:
     restart: unless-stopped
 
   guide:
+    profiles: ["llm"]           # model app: not on the GL.iNet (lite) profile
     image: ghcr.io/jessewolcott/airplanemode-guide:0.1.0
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}
@@ -165,6 +171,7 @@ services:
 
   # The Couch: therapist simulator. Conversations stay in the browser; nothing is stored on the box.
   couch:
+    profiles: ["llm"]           # model app: not on the GL.iNet (lite) profile
     image: ghcr.io/jessewolcott/airplanemode-couch:0.1.0
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}

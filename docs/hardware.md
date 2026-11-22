@@ -49,11 +49,13 @@ from the container. If the admin panel says it can't reach the router's API (*un
 - Docker comes from opkg (`dockerd`, `docker`, `docker-compose`) and needs USB or SD storage
   for its data (*untested: confirm package names and storage setup on the actual firmware*).
 - The admin panel is on port 80, so AirplaneMode uses **8080** on `LAN_IP=192.168.8.1`.
-- No model on this profile. Apps run in their plain mode.
-- **Memory.** The limits in `hardware/glinet.env` add up to about 950 MB, but they are ceilings,
-  not use: on the dev stack the proxy, admin and all ten apps use about 420 MB together when
-  idle (the Travel Guide ~80 MB, the rest 20–40 MB each). Switching an app off in the admin
-  panel only hides it from the menu; it keeps running. *Untested: measure on a real 1 GB
+- No model on this profile, and no model apps: The Dark Light, the Travel Guide and The Couch
+  (`uses_llm` in `portal/apps.json`) run only under the `llm` compose profile, and the menu
+  leaves them out (decision 0017). That also saves the guide's ~260 MB of Wikivoyage.
+- **Memory.** The limits in `hardware/glinet.env` add up to about 580 MB, but they are ceilings,
+  not use: on the dev stack the proxy, admin and the seven lite apps use about 120 MB together
+  when idle. Switching an app off in the admin panel only hides it from the menu; it keeps
+  running. *Untested: measure on a real 1 GB
   GL.iNet with a few people playing before relying on it.*
 - **Repeater caveat.** GL.iNet's firmware has its own repeater manager, which also edits the
   upstream Wi-Fi settings. Using both it and AirplaneMode's *Internet source* panel can make

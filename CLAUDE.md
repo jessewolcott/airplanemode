@@ -8,7 +8,7 @@ their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airpla
 `../airplanemode-passport`, `../airplanemode-wayfarer`, `../airplanemode-couch`) and plug in as pinned container images. The public homepage +
 one-line installer is
 `../airplanemode-site` (not hosted yet; decisions 0011, 0012).
-Start with `README.md`, then `docs/decisions/` (0001–0016). They explain *why* things are
+Start with `README.md`, then `docs/decisions/` (0001–0017). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
@@ -78,6 +78,8 @@ VS Code tasks (`.vscode/tasks.json`) wrap all of the above.
 - Caddy is published **only on `LAN_IP`** (Docker's firewall rules can bypass OpenWrt's).
   The admin container uses **`dns: LAN_IP`** (Docker otherwise falls back to public DNS,
   which hotels block before sign-in).
+- Model apps (`uses_llm` in apps.json: darklight, guide, couch) carry `profiles: ["llm"]` and
+  the admin hides them without that profile, so the GL.iNet lite profile has none (decision 0017).
 - Apps: pinned image tags in `compose.yaml` (never `latest`), plus a route in `Caddyfile` and
   an entry in `portal/apps.json`; CI checks all three. Reserved paths: `/api`, `/admin`.
   App rules: `docs/app-contract.md`.
@@ -144,6 +146,7 @@ Done and pushed (CI green):
   (Stoic/Socialist schools as data files, fixed safety check). Played in the dev stack at
   phone size, not on real phones. Released: all four 0.1.0. The homepage lists all ten apps
   (cards generated from `portal/apps.json`).
+- GL.iNet lite profile without the model apps (decision 0017).
 
 **No real hardware has been tested yet.** The R6S and adapters aren't bought. Parts:
 - NanoPi R6S 8 GB with the metal case,
@@ -154,8 +157,9 @@ Done and pushed (CI green):
 
 Open follow-ups:
 1. Work through `docs/testing.md` → *On the device: checklist* once hardware arrives.
-2. Darklight: understand free-text commands without the model (GL.iNet profile). Work in
-   `../airplanemode-darklight`.
+2. Choose a better shared model than Qwen2.5-1.5B. A desktop eval (2026-11-22) put Gemma 4 E2B
+   ahead on narration and the Couch personas; Qwen3.5's chat template rejects The Couch's
+   per-turn system nudge (merge it into the user turn first). R6S speeds still unmeasured.
 3. Measure model tokens/s on the R6S, update decision 0003, and maybe spike RKLLM (NPU).
 4. Home VPN: bypass the tunnel automatically for hotel sign-in pages (decision 0010).
 5. Narrow the restricted login's `network`/`firewall` write access (decision 0008

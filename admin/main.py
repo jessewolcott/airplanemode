@@ -40,6 +40,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import secrets
 import time
 from contextlib import asynccontextmanager
@@ -429,10 +430,19 @@ async def session(_token: str = Depends(require_admin)):
 APPS_FILE = Path(os.getenv("APPS_FILE", "/config/apps.json"))
 
 
+def model_on():
+    """Whether the shared model (and so the apps that need it) runs: the "llm" compose profile.
+    Compose passes COMPOSE_PROFILES (maybe empty); unset means not run by compose (tests): all on."""
+    profiles = os.getenv("COMPOSE_PROFILES")
+    return profiles is None or "llm" in re.split(r"[,\s]+", profiles)
+
+
 def installed_apps():
     try:
         apps = json.loads(APPS_FILE.read_text(encoding="utf-8"))
-        return [a for a in apps if isinstance(a, dict) and isinstance(a.get("id"), str)]
+        apps = [a for a in apps if isinstance(a, dict) and isinstance(a.get("id"), str)]
+        # Model apps don't run without the model (GL.iNet lite profile), so they aren't installed.
+        return apps if model_on() else [a for a in apps if not a.get("uses_llm")]
     except FileNotFoundError:
         return []
     except Exception as e:

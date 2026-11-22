@@ -88,6 +88,17 @@ services:
     mem_limit: ${DARKLIGHT_MEM:-256m}
     restart: unless-stopped
 
+  drop:
+    image: ghcr.io/jessewolcott/airplanemode-drop:0.1.0
+    environment:
+      DROP_MAX_BYTES: ${DROP_MAX_BYTES:-4g}
+      DROP_MAX_FILE: ${DROP_MAX_FILE:-2g}
+      DROP_KEEP_DAYS: ${DROP_KEEP_DAYS:-7}
+    volumes:
+      - drop-data:/data
+    mem_limit: ${DROP_MEM:-128m}
+    restart: unless-stopped
+
 networks:
   default:
     name: airplanemode
@@ -96,3 +107,4 @@ volumes:
   models:
   caddy-data:
   admin-data:
+  drop-data:

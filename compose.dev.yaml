@@ -21,3 +21,7 @@ services:
   darklight:
     image: airplanemode-darklight:dev
     build: ../airplanemode-darklight
+
+  drop:
+    image: airplanemode-drop:dev
+    build: ../airplanemode-drop

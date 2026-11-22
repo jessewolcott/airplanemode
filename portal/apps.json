@@ -8,5 +8,15 @@
     "color": "#f2b34b",
     "category": "Games",
     "uses_llm": true
+  },
+  {
+    "id": "drop",
+    "name": "Drop",
+    "description": "Send files and notes between every phone, tablet and laptop on the hotspot, and keep movies for the flight.",
+    "path": "/drop/",
+    "monogram": "Dp",
+    "color": "#5fb8c9",
+    "category": "Tools",
+    "uses_llm": false
   }
 ]

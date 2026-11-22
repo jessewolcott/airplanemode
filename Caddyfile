@@ -21,6 +21,11 @@
 		reverse_proxy darklight:8000
 	}
 
+	redir /drop /drop/
+	handle_path /drop/* {
+		reverse_proxy drop:8000
+	}
+
 	# ---- platform: status API and admin panel (reserved paths: no app may use /api or /admin) ----
 	redir /admin /admin/
 	handle /api/* {

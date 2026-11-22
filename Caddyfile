@@ -41,6 +41,11 @@
 		reverse_proxy quickshot:8000
 	}
 
+	redir /doom /doom/
+	handle_path /doom/* {
+		reverse_proxy doom:8000
+	}
+
 	redir /guide /guide/
 	handle_path /guide/* {
 		reverse_proxy guide:8000

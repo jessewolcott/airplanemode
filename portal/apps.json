@@ -52,6 +52,24 @@
     "icon": "/icons/quickshot.svg"
   },
   {
+    "id": "doom",
+    "name": "Doom",
+    "description": "The classic shooter, running on your device with touch controls. Freedoom, the Layover airport episode, or your own WADs from Drop.",
+    "path": "/doom/",
+    "monogram": "Dm",
+    "color": "#e0472b",
+    "category": "Games",
+    "uses_llm": false,
+    "opens": {
+      "from": "drop",
+      "types": [
+        "application/x-doom-wad"
+      ],
+      "url": "/doom/#drop={id}"
+    },
+    "icon": "/icons/doom.svg"
+  },
+  {
     "id": "guide",
     "name": "Travel Guide",
     "description": "All of Wikivoyage, offline. Look up any destination, or ask a question and get an answer from the guide.",

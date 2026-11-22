@@ -34,6 +34,10 @@ services:
     image: airplanemode-quickshot:dev
     build: ../airplanemode-quickshot
 
+  doom:
+    image: airplanemode-doom:dev
+    build: ../airplanemode-doom
+
   guide:
     image: airplanemode-guide:dev
     build: ../airplanemode-guide

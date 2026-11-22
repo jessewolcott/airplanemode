@@ -16,6 +16,7 @@ offline at runtime, usable without the model, small in memory.
 | [Travel Guide](https://github.com/jessewolcott/airplanemode-guide) | All of Wikivoyage offline, plus "ask the guide" | optional |
 | [Cinema](https://github.com/jessewolcott/airplanemode-cinema) | Plays the films, shows and music on Drop, shelved by folder, resuming per device | no |
 | [QuickShot](https://github.com/jessewolcott/airplanemode-quickshot) | An endless swipe feed of the clips in Drop's QuickShot folder, with shared likes and comments | no |
+| [Doom](https://github.com/jessewolcott/airplanemode-doom) | PrBoom+ in the browser with touch controls: Freedoom, the Layover airport episode, your own WADs from Drop | no |
 
 ## Next up
 

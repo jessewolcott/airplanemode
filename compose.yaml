@@ -124,6 +124,13 @@ services:
     mem_limit: ${QUICKSHOT_MEM:-64m}
     restart: unless-stopped
 
+  # Doom (PrBoom+ in WebAssembly): static files only, the game runs in the browser. Plays
+  # Freedoom, the Layover episode, and .wad files from Drop.
+  doom:
+    image: ghcr.io/jessewolcott/airplanemode-doom:0.1.0
+    mem_limit: ${DOOM_MEM:-32m}
+    restart: unless-stopped
+
   guide:
     image: ghcr.io/jessewolcott/airplanemode-guide:0.1.0
     environment:

@@ -125,5 +125,9 @@ Things only real hardware can prove. Tick them off here as they're verified.
       works on it; resuming brings it back. Also with the VPN on.
 - [ ] **Data use:** downloading a known-size file on a phone shows up in the panel within a
       minute, under the right network name.
+- [ ] **Doom:** on an Android phone and an iPhone (home-screen web app), Layover starts, the
+      touch controls feel right (move, turn, fire, use, menus, saving), sound and music play
+      after the first tap, and a save survives closing the tab. Note the frame rate on a
+      mid-range phone at "Balanced". A `.wad` uploaded to Drop shows **Play in Doom**.
 - [ ] The model's speed on the R6S (tokens/s). Update decision 0003 with the number.
 - [ ] Temperature and power draw with both adapters and the model busy.

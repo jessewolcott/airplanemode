@@ -20,3 +20,4 @@ rewriting history.
 | [0012](0012-site-own-server.md) | The homepage goes on its own server (not yet set up), not GitHub Pages |
 | [0013](0013-cinema-drop-folders-app-switches.md) | Cinema, Drop folders and "downloads off" (admin), app switches on the menu |
 | [0014](0014-quickshot.md) | QuickShot: a swipe feed over a Drop folder, with comments in its own volume |
+| [0015](0015-doom.md) | Doom: PrBoom+ in the browser with touch controls, Freedoom, and the Layover airport episode made in code |

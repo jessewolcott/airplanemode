@@ -172,6 +172,10 @@ docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 # http://localhost:8080  (admin password in dev mode: "dev")
 ```
 
+In VS Code, open `airplanemode.code-workspace`: it loads this repo and the app repos side
+by side, recommends the extensions, and has tasks (*Terminal → Run Task*) for the dev stack,
+tests and config checks. Contributors using Claude Code: see `CLAUDE.md`.
+
 Join `Harbor_Hotel_Guest` in the admin panel to see the sign-in flow. Simulate travel with
 `curl -X POST localhost:8080/api/mock/world -H 'Content-Type: application/json' -d '{"in_range": []}'`
 (walk away from every network), `{"in_range": ["CoffeeCorner"]}`, or `{"ethernet": true}`. After editing the

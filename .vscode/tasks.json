@@ -1,0 +1,56 @@
+{
+	// Terminal > Run Task... (or Ctrl+Shift+P > "Tasks: Run Task")
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Setup: create .venv for admin tests",
+			"type": "shell",
+			"windows": { "command": "python -m venv .venv; .venv\\Scripts\\python -m pip install -q -r admin/requirements.txt" },
+			"command": "python3 -m venv .venv && .venv/bin/python -m pip install -q -r admin/requirements.txt",
+			"problemMatcher": []
+		},
+		{
+			"label": "Dev stack: up (mock router)",
+			"detail": "http://localhost:8080 (admin password: dev). Builds apps from ../airplanemode-darklight.",
+			"type": "shell",
+			"command": "docker compose -f compose.yaml -f compose.dev.yaml up -d --build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Dev stack: restart proxy (after Caddyfile edits)",
+			"type": "shell",
+			"command": "docker compose -f compose.yaml -f compose.dev.yaml restart proxy",
+			"problemMatcher": []
+		},
+		{
+			"label": "Dev stack: admin logs",
+			"type": "shell",
+			"command": "docker compose -f compose.yaml -f compose.dev.yaml logs -f --tail 50 admin",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Dev stack: down",
+			"type": "shell",
+			"command": "docker compose -f compose.yaml -f compose.dev.yaml down",
+			"problemMatcher": []
+		},
+		{
+			"label": "Tests: admin API + supervisor (mock)",
+			"type": "shell",
+			"windows": { "command": ".venv\\Scripts\\python admin/tests/test_admin.py" },
+			"command": ".venv/bin/python admin/tests/test_admin.py",
+			"group": { "kind": "test", "isDefault": true },
+			"problemMatcher": []
+		},
+		{
+			"label": "Check: compose + Caddyfile for both hardware profiles",
+			"type": "shell",
+			"windows": {
+				"command": "foreach ($h in 'nanopi-r6s','glinet') { docker compose --env-file \"hardware/$h.env\" config --quiet; if ($?) { \"compose $h ok\" } }; foreach ($ip in '192.168.2.1','192.168.8.1','127.0.0.1') { docker run --rm -e LAN_IP=$ip -e HTTP_PORT=8080 -v \"${PWD}/Caddyfile:/etc/caddy/Caddyfile:ro\" caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile 2>&1 | Select-String 'Valid|Error' }"
+			},
+			"command": "for h in nanopi-r6s glinet; do docker compose --env-file hardware/$h.env config --quiet && echo \"compose $h ok\"; done; for ip in 192.168.2.1 192.168.8.1 127.0.0.1; do docker run --rm -e LAN_IP=$ip -e HTTP_PORT=8080 -v \"$PWD/Caddyfile:/etc/caddy/Caddyfile:ro\" caddy:2.8-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile 2>&1 | grep -E 'Valid|Error'; done",
+			"problemMatcher": []
+		}
+	]
+}

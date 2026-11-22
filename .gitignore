@@ -1,2 +1,5 @@
 .env
 *.gguf
+.venv/
+__pycache__/
+*.pyc

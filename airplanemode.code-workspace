@@ -1,0 +1,38 @@
+{
+	// Open this file in VS Code to work on the platform and its apps together:
+	//   code H:\Github\airplanemode\airplanemode.code-workspace
+	// App repos are expected next to this one (clone them into the same parent folder).
+	"folders": [
+		{ "name": "airplanemode (platform)", "path": "." },
+		{ "name": "airplanemode-darklight", "path": "../airplanemode-darklight" }
+	],
+	"settings": {
+		"files.associations": {
+			"Caddyfile": "caddyfile",
+			"*.env": "dotenv",
+			".env": "dotenv"
+		},
+		// these files run on the Linux box: keep LF even when edited on Windows
+		"[shellscript]": { "files.eol": "\n" },
+		"[dotenv]": { "files.eol": "\n" },
+		"[yaml]": { "files.eol": "\n" },
+		"[caddyfile]": { "files.eol": "\n" },
+		"files.exclude": {
+			"**/__pycache__": true
+		},
+		"python.terminal.activateEnvironment": true
+	},
+	"extensions": {
+		"recommendations": [
+			"anthropic.claude-code",
+			"ms-python.python",
+			"ms-azuretools.vscode-containers",
+			"redhat.vscode-yaml",
+			"github.vscode-github-actions",
+			"matthewpi.caddyfile-support",
+			"timonwong.shellcheck",
+			"mikestead.dotenv",
+			"bierner.markdown-mermaid"
+		]
+	}
+}

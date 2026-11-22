@@ -130,8 +130,7 @@ Done and pushed (CI green):
   stack when the UI changes), app ideas in `docs/app-ideas.md`.
 - homepage + one-line installer (`../airplanemode-site`, not hosted yet; decisions 0011, 0012).
 - Cinema app (`../airplanemode-cinema`), Drop folders + admin "downloads off", app switches in
-  the admin panel (decision 0013). **Drop 0.2.0 and Cinema 0.1.0 still need release tags**;
-  until then the platform wiring lives on branch `cinema` (CI checks pinned images exist).
+  the admin panel (decision 0013). Released: Drop 0.2.0, Cinema 0.1.0.
 
 **No real hardware has been tested yet.** The R6S and adapters aren't bought. Parts:
 - NanoPi R6S 8 GB with the metal case,

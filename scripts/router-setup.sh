@@ -12,6 +12,8 @@
 #     To keep rebind protection on anyway:  KEEP_REBIND_PROTECTION=1 sh scripts/router-setup.sh
 #  3. Ethernet before Wi-Fi: the wired WAN gets route metric 10 (the Wi-Fi uplink gets 20),
 #     so a plugged-in cable always wins.
+#  4. WireGuard support for the home VPN (installs wireguard-tools and luci-proto-wireguard
+#     if they're missing; needs internet). Skip with SKIP_WIREGUARD=1.
 set -eu
 cd "$(dirname "$0")/.."
 
@@ -75,6 +77,19 @@ else
 	echo "note: no network.$WAN_IFACE interface; set WAN_IFACE in .env if your wired WAN has another name." >&2
 fi
 
+# ---- 4. WireGuard for the home VPN ----
+if [ "${SKIP_WIREGUARD:-0}" = 1 ]; then
+	:
+elif [ -f /lib/netifd/proto/wireguard.sh ] && [ -f /usr/share/rpcd/ucode/luci.wireguard ]; then
+	echo "WireGuard support is already installed."
+elif command -v apk >/dev/null 2>&1; then
+	{ apk update && apk add wireguard-tools luci-proto-wireguard; } >/dev/null 2>&1 \
+		|| echo "warning: couldn't install WireGuard (offline?). The home VPN won't work until you re-run this online." >&2
+elif command -v opkg >/dev/null 2>&1; then
+	{ opkg update && opkg install wireguard-tools luci-proto-wireguard; } >/dev/null 2>&1 \
+		|| echo "warning: couldn't install WireGuard (offline?). The home VPN won't work until you re-run this online." >&2
+fi
+
 # don't let a stuck service hang the whole script
 # (busybox 'timeout' isn't in every build, so do it by hand)
 svc() {
@@ -103,6 +118,7 @@ echo "Router ready:"
 echo "  - login '$USER_NAME' (Wi-Fi settings only); its password is in .env"
 echo "  - http://airplane.mode:${HTTP_PORT:-8080} points at $LAN_IP"
 echo "  - Ethernet ($WAN_IFACE) is preferred over Wi-Fi"
+[ -f /lib/netifd/proto/wireguard.sh ] && echo "  - WireGuard is available for the home VPN"
 if docker compose ps --services 2>/dev/null | grep -qx admin; then
 	docker compose up -d admin >/dev/null && echo "Restarted the admin service with the new login."
 fi

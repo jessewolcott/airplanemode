@@ -129,7 +129,7 @@ def tick(now):
 
 def reset_world():
     r = main.router
-    r.upstream, r.ethernet, r.portal_on = None, False, False
+    r.upstream, r.ethernet, r.portal_on, r.vpn = None, False, False, None
     r.in_range = {n["ssid"] for n in r.NEARBY}
     main.store.data.update(networks=[], paused=False)
     main.supervisor.__init__()
@@ -267,6 +267,112 @@ def test_offline_popup_waits_during_join():
     assert not r.portal_on
     t = tick(100)                                          # second failure: nothing left to try
     assert t["joining"] is None and r.portal_on, t
+
+
+KEY_A = "yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk="
+KEY_B = "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg="
+WG_CONF = f"""
+# exported from the home router
+[Interface]
+PrivateKey = {KEY_A}
+Address = 10.8.0.2/24, fd00::2/64
+DNS = 10.8.0.1, home.lan
+
+[Peer]
+PublicKey = {KEY_B}
+PresharedKey = {KEY_A}
+Endpoint = home.example.net:51820
+AllowedIPs = 0.0.0.0/0, ::/0
+PersistentKeepalive = 25
+"""
+
+
+def test_wireguard_config_parsing():
+    from vpn import parse_wg_conf
+    cfg = parse_wg_conf(WG_CONF)
+    assert cfg["addresses"] == ["10.8.0.2/24", "fd00::2/64"] and cfg["dns"] == ["10.8.0.1"], cfg
+    assert (cfg["endpoint_host"], cfg["endpoint_port"]) == ("home.example.net", 51820)
+    assert cfg["allowed_ips"] == ["0.0.0.0/0", "::/0"] and cfg["preshared_key"] == KEY_A
+    assert parse_wg_conf(WG_CONF.replace("home.example.net:51820", "[2001:db8::1]:51820"))["endpoint_host"] == "2001:db8::1"
+    bad = [
+        WG_CONF.replace(KEY_A, "notakey", 1),                         # private key
+        WG_CONF.replace("Endpoint = home.example.net:51820", "Endpoint = home.example.net"),
+        WG_CONF.replace(":51820", ":70000"),
+        WG_CONF.replace("Address = 10.8.0.2/24, fd00::2/64", "Address = 10.8.0.300/24"),
+        WG_CONF.replace("[Peer]", "[Interface]"),                     # two interfaces, no peer
+        WG_CONF.replace("home.example.net", "bad host;rm -rf"),
+        "just some text",
+    ]
+    for text in bad:
+        try:
+            parse_wg_conf(text)
+            raise AssertionError(f"accepted bad config:\n{text}")
+        except RouterError:
+            pass
+
+
+def test_vpn_api():
+    reset_world()
+    main.router.vpn = None
+    assert ok(c.get("/api/admin/vpn")) == {"configured": False}
+    assert c.put("/api/admin/vpn", headers=H, json={"config": "nope"}).status_code == 400
+    ok(c.put("/api/admin/vpn", headers=H, json={"config": WG_CONF}))
+    v = ok(c.get("/api/admin/vpn"))
+    assert v["configured"] and v["enabled"] and v["full_tunnel"] and v["endpoint"] == "home.example.net:51820", v
+    assert KEY_A not in str(v), "private and preshared keys must never be handed out"
+    assert v["connected"] is False                           # no uplink yet
+    main.router.ethernet = True
+    s = ok(c.get("/api/status?refresh=1"))
+    assert s["vpn"] == {"configured": True, "enabled": True, "connected": True}, s
+    assert KEY_A not in str(s) and "home.example.net" not in str(s)
+    # behind a hotel sign-in page the tunnel can't come up: the page must say so
+    main.router.ethernet = False
+    ok(c.post("/api/admin/upstream", headers=H, json={"radio": "radio0", "ssid": "Gate 14 Free WiFi", "encryption": "none"}))
+    s = ok(c.get("/api/status?refresh=1"))
+    assert s["internet"] == "offline" and s["via"] == "wifi" and s["vpn"]["connected"] is False, s
+    ok(c.post("/api/admin/vpn/enabled", headers=H, json={"enabled": False}))
+    s = ok(c.get("/api/status?refresh=1"))
+    assert s["internet"] == "captive" and s["vpn"]["enabled"] is False, s
+    ok(c.delete("/api/admin/vpn", headers=H))
+    assert ok(c.get("/api/admin/vpn")) == {"configured": False}
+    assert c.post("/api/admin/vpn/enabled", headers=H, json={"enabled": True}).status_code == 400
+
+
+def test_devices_pause():
+    reset_world()
+    main.router.paused = set()
+    devs = ok(c.get("/api/admin/devices", headers={"X-Forwarded-For": "192.168.2.152"}))["devices"]
+    assert len(devs) == 4 and not any(d["paused"] for d in devs)
+    assert [d["name"] for d in devs if d["you"]] == ["MacBook-Air"], devs
+    mac = next(d["mac"] for d in devs if d["name"] == "Pixel-8")
+    ok(c.post(f"/api/admin/devices/{mac}/pause", headers=H, json={"paused": True}))
+    assert [d["name"] for d in ok(c.get("/api/admin/devices"))["devices"] if d["paused"]] == ["Pixel-8"]
+    ok(c.post(f"/api/admin/devices/{mac}/pause", headers=H, json={"paused": False}))
+    assert not any(d["paused"] for d in ok(c.get("/api/admin/devices"))["devices"])
+    assert c.post("/api/admin/devices/01:00:5e:00:00:01/pause", headers=H, json={"paused": True}).status_code == 400
+
+
+def test_data_use():
+    reset_world()
+    main.store.data["usage"] = {}
+    r = main.router
+    main.store.remember("radio1", "CoffeeCorner", "psk2", "latte2024", None)
+    tick(0)                                  # joins
+    tick(10), tick(20), tick(30)             # first counted tick sets the baseline, then 2 deltas
+    u = ok(c.get("/api/admin/usage"))
+    assert u["current"]["name"] == "CoffeeCorner" and u["current"]["rx"] == 3_000_000, u
+    assert u["networks"][0]["name"] == "CoffeeCorner" and u["networks"][0]["tx"] == 400_000, u
+    r.ethernet = True                        # cable in: usage counts on both, Ethernet is "current"
+    tick(40), tick(50)
+    u = ok(c.get("/api/admin/usage"))
+    assert u["current"]["name"] == "Ethernet" and u["current"]["rx"] == 3_000_000, u
+    assert {n["name"] for n in u["networks"]} == {"CoffeeCorner", "Ethernet"}
+    r.counters["wifi"] = {"rx": 0, "tx": 0}  # counters restart (interface recreated)
+    tick(60)
+    cc = next(n for n in ok(c.get("/api/admin/usage"))["networks"] if n["name"] == "CoffeeCorner")
+    assert cc["rx"] == 3_000_000 + 1_500_000 * 3, cc
+    ok(c.delete("/api/admin/usage", headers=H))
+    assert ok(c.get("/api/admin/usage"))["networks"] == []
 
 
 def test_logout():

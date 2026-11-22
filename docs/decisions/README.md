@@ -15,3 +15,4 @@ rewriting history.
 | [0007](0007-shared-captive-portal-sign-in.md) | One sign-in for everyone: NAT plus captive-portal detection |
 | [0008](0008-least-privilege-router-login.md) | A Wi-Fi-only router login for the admin service |
 | [0009](0009-connectivity-supervisor.md) | Staying connected: auto-join, Ethernet first, rebind off, offline popup |
+| [0010](0010-home-vpn-devices-data-use.md) | Home VPN (WireGuard), connected devices with pause, data use per network |

@@ -25,8 +25,13 @@
   section.card > h2 { margin: 0 0 4px; font-size: 1.05rem; }
   section.card > p.lead { margin: 0 0 14px; color: var(--dim); font-size: .9rem; }
   label { display: block; font-size: .8rem; color: var(--dim); margin-bottom: 4px; }
-  input, select { width: 100%; font: .95rem var(--sans); color: var(--ink); background: var(--bg); border: 1px solid var(--line2); border-radius: 7px; padding: 9px 11px; }
-  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  input, select, textarea { width: 100%; font: .95rem var(--sans); color: var(--ink); background: var(--bg); border: 1px solid var(--line2); border-radius: 7px; padding: 9px 11px; }
+  textarea { font: .8rem/1.45 var(--mono); resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  .tag { display: inline-block; font: .68rem var(--mono); color: var(--dim); border: 1px solid var(--line2); border-radius: 4px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
+  .tag.you { color: var(--accent); border-color: #5b4a2c; } .tag.paused { color: var(--bad); border-color: #5a2f2a; }
+  ul.saved li .sub { display: block; font: .75rem var(--mono); color: var(--dim); }
+  .num { font-family: var(--mono); font-size: .82rem; color: var(--dim); white-space: nowrap; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
   .btn { font: 600 .9rem var(--sans); padding: 9px 14px; border-radius: 7px; border: 1px solid var(--line2); background: var(--panel2); color: var(--ink); cursor: pointer; }
   .btn:hover { border-color: var(--dim); }
@@ -125,6 +130,42 @@
       <ul class="saved" id="saved"></ul>
     </section>
 
+    <!-- home VPN -->
+    <section class="card" id="vpn">
+      <h2>Home VPN</h2>
+      <p class="lead">Send everything from your hotspot through an encrypted WireGuard tunnel to home (or to a VPN service), so the hotel's network only sees scrambled traffic.</p>
+      <div class="state"><span class="dot" id="vpnDot"></span><span id="vpnText">Checking…</span></div>
+      <div class="row hidden" id="vpnControls" style="margin-top:0">
+        <label class="toggle"><input type="checkbox" id="vpnToggle"> Use the VPN</label>
+        <button class="btn danger" id="vpnRemove" type="button">Remove</button>
+      </div>
+      <p class="warn" id="vpnHint"></p>
+      <details id="vpnSetup"><summary id="vpnSetupLabel">Set up a WireGuard tunnel</summary>
+        <form id="vpnForm">
+          <p class="note">Paste the WireGuard config from your home router, your server (wg-easy, PiVPN…) or a VPN service. It starts with <code>[Interface]</code>. Make one config just for this box. The private key stays on the box and is never shown again.</p>
+          <textarea id="vpnConf" rows="10" spellcheck="false" autocomplete="off" placeholder="[Interface]&#10;PrivateKey = …&#10;Address = 10.8.0.2/24&#10;DNS = 10.8.0.1&#10;&#10;[Peer]&#10;PublicKey = …&#10;Endpoint = home.example.net:51820&#10;AllowedIPs = 0.0.0.0/0, ::/0"></textarea>
+          <div class="row"><input type="file" id="vpnFile" accept=".conf,text/plain" style="width:auto;flex:1"><button class="btn primary" id="vpnSave">Save and turn on</button></div>
+        </form>
+      </details>
+      <div class="msg" id="vpnMsg"></div>
+    </section>
+
+    <!-- devices -->
+    <section class="card" id="devices">
+      <h2>Connected devices</h2>
+      <p class="lead">Devices on your hotspots. <b>Pause</b> cuts one device's internet (a kid's tablet, a phone eating the hotel's data cap); the apps on this box keep working for it.</p>
+      <ul class="saved" id="devList"><li class="note">Loading…</li></ul>
+    </section>
+
+    <!-- data use -->
+    <section class="card" id="usage">
+      <h2>Data use</h2>
+      <p class="lead">Measured on the box's internet connection, so it covers every device. Handy on capped or pay-per-MB Wi-Fi.</p>
+      <div class="state" id="usageNow">…</div>
+      <ul class="saved" id="usageList"></ul>
+      <div class="row"><button class="btn" id="usageReset" type="button">Reset counters</button></div>
+    </section>
+
     <!-- hotspots -->
     <section class="card">
       <h2>Your hotspots</h2>
@@ -196,6 +237,7 @@ async function load() {
   renderHotspots();
   if (state.upstream && !picked) fillJoin({ ssid: state.upstream.ssid, security: state.upstream.encryption }, state.upstream.macaddr);
   await refreshNet();
+  loadExtras();
 }
 
 async function refreshNet() {
@@ -315,6 +357,82 @@ $("#addForm").addEventListener("submit", e => { e.preventDefault(); busy(e.submi
     state = await api("GET", "/api/admin/wifi"); renderHotspots();
   } catch (err) { msg($("#addMsg"), err.message, false); }
 }); });
+
+// ---------- home VPN ----------
+const fmtBytes = n => n == null ? "?" : n < 1e6 ? `${Math.round(n / 1e3)} kB` : n < 1e9 ? `${(n / 1e6).toFixed(1)} MB` : `${(n / 1e9).toFixed(2)} GB`;
+const ago = s => s < 90 ? `${Math.round(s)} s ago` : s < 5400 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago`;
+
+async function loadVpn() {
+  const v = await api("GET", "/api/admin/vpn");
+  $("#vpnControls").classList.toggle("hidden", !v.configured);
+  $("#vpnSetupLabel").textContent = v.configured ? "Replace the WireGuard config" : "Set up a WireGuard tunnel";
+  $("#vpnSave").textContent = v.configured ? "Save" : "Save and turn on";
+  let dot = "", text = "Not set up.", hint = "";
+  if (v.configured) {
+    $("#vpnToggle").checked = v.enabled;
+    const to = `<b>${esc(v.endpoint)}</b>`;
+    const traffic = v.rx != null && v.up ? ` <span class="note">· ↓ ${fmtBytes(v.rx)} ↑ ${fmtBytes(v.tx)}</span>` : "";
+    if (!v.enabled) { text = `Off. Traffic goes straight out through the network the box is on.`; }
+    else if (v.connected) { dot = "online"; text = `Connected to ${to} <span class="note">· handshake ${ago(v.handshake_age)}</span>${traffic}`; }
+    else if (v.connected === null) { dot = "captive"; text = `On, sending traffic to ${to}.`; hint = "This router can't report the tunnel's state (luci-proto-wireguard isn't installed); re-run scripts/router-setup.sh while online."; }
+    else { dot = "offline"; text = `On, but not connected to ${to} yet.`;
+      hint = "While the VPN is on and not connected, nothing reaches the internet (nothing leaks around it either). If this Wi-Fi has a sign-in page, turn the VPN off, sign in, then turn it back on. Otherwise check that the box is online and your home end is reachable."; }
+    if (v.enabled && !v.full_tunnel) hint = (hint ? hint + " " : "") + `Only these networks go through the tunnel: ${v.allowed_ips.map(esc).join(", ")}.`;
+  }
+  $("#vpnDot").className = "dot " + dot; $("#vpnText").innerHTML = text; $("#vpnHint").textContent = hint;
+}
+$("#vpnToggle").addEventListener("change", e => busy(e.target, async () => {
+  try { await api("POST", "/api/admin/vpn/enabled", { enabled: e.target.checked }); msg($("#vpnMsg"), "", true); }
+  catch (err) { e.target.checked = !e.target.checked; msg($("#vpnMsg"), err.message, false); $("#vpnSetup").open = true; }
+  await loadVpn(); setTimeout(() => loadVpn().catch(() => {}), 6000);
+}));
+$("#vpnRemove").addEventListener("click", e => busy(e.target, async () => {
+  if (!confirm("Remove the home VPN? Its config (and private key) is deleted from the box.")) return;
+  try { await api("DELETE", "/api/admin/vpn"); await loadVpn(); } catch (err) { msg($("#vpnMsg"), err.message, false); }
+}));
+$("#vpnFile").addEventListener("change", async e => { const f = e.target.files[0]; if (f) $("#vpnConf").value = await f.text(); });
+$("#vpnForm").addEventListener("submit", e => { e.preventDefault(); busy($("#vpnSave"), async () => {
+  try {
+    await api("PUT", "/api/admin/vpn", { config: $("#vpnConf").value, enabled: true });
+    $("#vpnConf").value = ""; $("#vpnFile").value = ""; $("#vpnSetup").open = false;
+    msg($("#vpnMsg"), "Saved. The tunnel comes up in a few seconds.", true);
+    await loadVpn(); setTimeout(() => loadVpn().catch(() => {}), 6000);
+  } catch (err) { msg($("#vpnMsg"), err.message, false); }
+}); });
+
+// ---------- devices ----------
+async function loadDevices() {
+  try {
+    const { devices } = await api("GET", "/api/admin/devices");
+    $("#devList").innerHTML = devices.map(d => `<li><span>${esc(d.name || "Unnamed device")}${d.you ? '<span class="tag you">this device</span>' : ""}${d.paused ? '<span class="tag paused">paused</span>' : ""}
+        <span class="sub">${esc(d.ip || "not connected")} · ${esc(d.mac)}</span></span>
+      <button type="button" data-mac="${esc(d.mac)}" data-paused="${d.paused ? 1 : 0}" data-name="${esc(d.name || d.mac)}" data-you="${d.you ? 1 : 0}">${d.paused ? "resume" : "pause"}</button></li>`).join("")
+      || `<li class="note">No devices yet.</li>`;
+  } catch (err) { $("#devList").innerHTML = `<li class="note">${esc(err.message)}</li>`; }
+}
+$("#devList").addEventListener("click", e => {
+  const b = e.target.closest("[data-mac]"); if (!b) return;
+  const pause = b.dataset.paused !== "1";
+  if (pause && b.dataset.you === "1" && !confirm("Pause your own device? You'll keep the admin panel, but lose the internet until you resume it.")) return;
+  busy(b, async () => { try { await api("POST", `/api/admin/devices/${encodeURIComponent(b.dataset.mac)}/pause`, { paused: pause }); } catch (err) { alert(err.message); } await loadDevices(); });
+});
+
+// ---------- data use ----------
+async function loadUsage() {
+  const u = await api("GET", "/api/admin/usage");
+  const c = u.current;
+  $("#usageNow").innerHTML = c ? `<span>On <b>${esc(c.name)}</b> since ${new Date(c.since * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}: <b>${fmtBytes(c.rx + c.tx)}</b> <span class="note">(↓ ${fmtBytes(c.rx)} ↑ ${fmtBytes(c.tx)})</span></span>`
+    : `<span class="note">${u.linked ? "Measuring… (the first numbers show up within a minute)" : "Not connected right now."}</span>`;
+  $("#usageList").innerHTML = u.networks.map(n => `<li><span>${esc(n.name)}<span class="sub">since ${new Date(n.first * 1000).toLocaleDateString()}</span></span><span class="num">${fmtBytes(n.rx + n.tx)} · ↓ ${fmtBytes(n.rx)} ↑ ${fmtBytes(n.tx)}</span></li>`).join("")
+    || `<li class="note">Nothing measured yet.</li>`;
+}
+$("#usageReset").addEventListener("click", e => busy(e.target, async () => {
+  if (!confirm("Reset all data-use counters?")) return;
+  await api("DELETE", "/api/admin/usage"); await loadUsage();
+}));
+
+function loadExtras() { return Promise.all([loadVpn(), loadDevices(), loadUsage()].map(p => p.catch(() => {}))); }
+setInterval(() => { if (!$("#panel").classList.contains("hidden")) loadExtras(); }, 15000);
 
 fetch("/apps.json").then(r => r.json()).then(apps => {
   $("#apps").innerHTML = apps.map(a => `<li><a href="${esc(a.path)}">${esc(a.name)}</a> <span>· ${esc(a.path)}${a.uses_llm ? " · uses the model" : ""}</span></li>`).join("") || "<li class='note'>No apps installed.</li>";

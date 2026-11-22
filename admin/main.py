@@ -16,6 +16,14 @@ Admin (password, cookie session):
   POST /api/admin/hotspots    {radio, ssid, encryption, key}
   PUT  /api/admin/hotspots/{id} {ssid, encryption, key, disabled}
   DELETE /api/admin/hotspots/{id}
+  GET  /api/admin/devices                                   (DHCP leases + paused state)
+  POST /api/admin/devices/{mac}/pause {paused}              (internet off for one device; box apps still work)
+  GET  /api/admin/usage       data used per uplink network, and on the current one
+  DELETE /api/admin/usage
+  GET  /api/admin/vpn         home VPN settings (never the private key) + tunnel state
+  PUT  /api/admin/vpn         {config: WireGuard .conf text, enabled}
+  POST /api/admin/vpn/enabled {enabled}
+  DELETE /api/admin/vpn
 UI:
   /admin/                     the admin panel (static)
 
@@ -39,7 +47,9 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from router import UPSTREAM_SECURITY, MockRouter, OpenWrtRouter, RouterError, check_key, check_mac, check_ssid
+from router import (UPSTREAM_SECURITY, VPN_FRESH, MockRouter, OpenWrtRouter, RouterError, check_key, check_mac,
+                    check_ssid)
+from vpn import full_tunnel, parse_wg_conf
 
 log = logging.getLogger("airplanemode")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -79,6 +89,7 @@ async def lifespan(_app):
     yield
     if task:
         task.cancel()
+    store.save_soon(every=0)  # keep data-use counts across restarts
 
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
@@ -132,6 +143,25 @@ class Store:
         return [{"ssid": n["ssid"], "encryption": n["encryption"], "has_key": bool(n.get("key")),
                  "macaddr": n.get("macaddr"), "last_used": n.get("last_used")} for n in self.networks]
 
+    # ---- data use per uplink network ("Ethernet" or an SSID) ----
+    def add_usage(self, name, rx, tx):
+        u = self.data.setdefault("usage", {})
+        now = time.time()
+        e = u.setdefault(name, {"rx": 0, "tx": 0, "first": now})
+        e["rx"] += rx
+        e["tx"] += tx
+        e["last"] = now
+        if len(u) > 100:  # keep the 100 most recent networks
+            for old in sorted(u, key=lambda k: u[k].get("last", 0))[:len(u) - 100]:
+                del u[old]
+        self._dirty = True
+
+    def save_soon(self, every=300):
+        """Counters change every tick; write them to flash at most every few minutes."""
+        if getattr(self, "_dirty", False) and time.monotonic() - getattr(self, "_saved_at", -1e9) >= every:
+            self.save()
+            self._dirty, self._saved_at = False, time.monotonic()
+
 
 store = Store(DATA_DIR / "networks.json")
 
@@ -144,6 +174,37 @@ class Supervisor:
         self.fails = {}            # ssid -> (count, since)
         self.down_ticks = 0
         self.last = {}             # last tick summary (for the admin panel)
+        self.counters = {}         # uplink -> last byte counters seen
+        self.session = None        # data used on the current uplink since it came up
+
+    async def count_usage(self, wifi):
+        """Add the bytes that went over each uplink since the last tick to that network's total."""
+        try:
+            now = await router.uplink_counters()
+        except RouterError:
+            return
+        for key in list(self.counters):
+            if key not in now:
+                del self.counters[key]  # link went down: start over when it's back
+        for key, c in now.items():
+            prev = self.counters.get(key)
+            self.counters[key] = c
+            name = "Ethernet" if key == "ethernet" else wifi.get("ssid") or (self.session or {}).get("name")
+            if prev is None or not name:
+                continue
+            # counters restart from 0 when the device is recreated
+            rx = c["rx"] - prev["rx"] if c["rx"] >= prev["rx"] else c["rx"]
+            tx = c["tx"] - prev["tx"] if c["tx"] >= prev["tx"] else c["tx"]
+            store.add_usage(name, rx, tx)
+            primary = "Ethernet" if "ethernet" in now else name
+            if name == primary:
+                if not self.session or self.session["name"] != name:
+                    self.session = {"name": name, "rx": 0, "tx": 0, "since": time.time()}
+                self.session["rx"] += rx
+                self.session["tx"] += tx
+        if not now:
+            self.session = None
+        store.save_soon()
 
     async def links(self):
         eth = await router.ethernet_status()
@@ -210,6 +271,10 @@ class Supervisor:
             if OFFLINE_PORTAL and self.down_ticks >= PORTAL_AFTER and now >= self.grace_until:
                 if await router.set_offline_portal(True):
                     action = (action + "; " if action else "") + "offline popup on"
+        if linked:
+            await self.count_usage(wifi)
+        elif self.counters:
+            self.counters, self.session = {}, None
         self.last = {"linked": linked, "ethernet": eth.get("connected"), "wifi": wifi.get("connected"),
                      "action": action, "joining": self.joining}
         if action:
@@ -256,6 +321,20 @@ async def probe():
     return "captive", PROBE_URL
 
 
+async def vpn_summary():
+    cfg = await router.vpn_config()
+    if not cfg:
+        return {"configured": False}
+    st = await router.vpn_status() if cfg["enabled"] else {"up": False}
+    hs = st.get("handshake")
+    age = int(time.time() - hs) if hs else None
+    return {"configured": True, **cfg, "full_tunnel": full_tunnel(cfg["allowed_ips"]),
+            "up": st.get("up"), "handshake_age": age,
+            # None = can't tell (luci-proto-wireguard not installed)
+            "connected": None if st.get("up") is None else bool(age is not None and age < VPN_FRESH),
+            "rx": st.get("rx"), "tx": st.get("tx")}
+
+
 @app.get("/api/status")
 async def status(refresh: bool = False):
     now = time.monotonic()
@@ -268,7 +347,12 @@ async def status(refresh: bool = False):
         # no uplink at all: don't probe (DNS may be answering with the offline popup address)
         internet, login_url = await probe() if linked or eth.get("connected") is None else ("offline", None)
         via = "ethernet" if eth.get("connected") else "wifi" if wifi.get("connected") else None
+        try:
+            vpn = await vpn_summary()
+        except RouterError:
+            vpn = {"configured": False}
         _status_cache.update(at=now, value={
+            "vpn": {k: vpn.get(k) for k in ("configured", "enabled", "connected")},
             "internet": internet, "login_url": login_url, "via": via,
             "upstream": {"ssid": wifi.get("ssid"), "connected": wifi.get("connected"), "signal": wifi.get("signal")},
             "ethernet": {"connected": eth.get("connected")},
@@ -436,6 +520,87 @@ async def save_hotspot(hid: str, body: Hotspot, _=Depends(require_admin)):
 async def delete_hotspot(hid: str, _=Depends(require_admin)):
     async with router_lock:
         await router.delete_hotspot(hid)
+    return {"ok": True}
+
+
+# ---------------- admin: devices ----------------
+class Pause(BaseModel):
+    paused: bool
+
+
+def client_ip(request: Request):
+    # Caddy sets X-Forwarded-For to the real client address (it ignores one sent by the client).
+    fwd = request.headers.get("x-forwarded-for", "")
+    return fwd.split(",")[-1].strip() or (request.client.host if request.client else None)
+
+
+@app.get("/api/admin/devices")
+async def devices(request: Request, _=Depends(require_admin)):
+    me = client_ip(request)
+    return {"devices": [dict(d, you=bool(me and d.get("ip") == me)) for d in await router.devices()]}
+
+
+@app.post("/api/admin/devices/{mac}/pause")
+async def pause_device(mac: str, body: Pause, _=Depends(require_admin)):
+    async with router_lock:
+        await router.set_device_paused(mac, body.paused)
+    return {"ok": True}
+
+
+# ---------------- admin: data use ----------------
+@app.get("/api/admin/usage")
+async def usage(_=Depends(require_admin)):
+    u = store.data.get("usage", {})
+    nets = sorted(({"name": k, **v} for k, v in u.items()), key=lambda e: -e.get("last", 0))
+    return {"current": supervisor.session, "linked": bool(supervisor.last.get("linked")), "networks": nets}
+
+
+@app.delete("/api/admin/usage")
+async def reset_usage(_=Depends(require_admin)):
+    store.data["usage"] = {}
+    if supervisor.session:
+        supervisor.session.update(rx=0, tx=0, since=time.time())
+    store.save()
+    return {"ok": True}
+
+
+# ---------------- admin: home VPN ----------------
+class VpnConfig(BaseModel):
+    config: str
+    enabled: bool = True
+
+
+class VpnEnabled(BaseModel):
+    enabled: bool
+
+
+@app.get("/api/admin/vpn")
+async def get_vpn(_=Depends(require_admin)):
+    return await vpn_summary()
+
+
+@app.put("/api/admin/vpn")
+async def put_vpn(body: VpnConfig, _=Depends(require_admin)):
+    cfg = parse_wg_conf(body.config)  # validate before touching the router
+    async with router_lock:
+        await router.set_vpn(cfg, body.enabled)
+    _bust()
+    return {"ok": True}
+
+
+@app.post("/api/admin/vpn/enabled")
+async def vpn_enabled(body: VpnEnabled, _=Depends(require_admin)):
+    async with router_lock:
+        await router.set_vpn_enabled(body.enabled)
+    _bust()
+    return {"ok": True}
+
+
+@app.delete("/api/admin/vpn")
+async def delete_vpn(_=Depends(require_admin)):
+    async with router_lock:
+        await router.remove_vpn()
+    _bust()
     return {"ok": True}
 
 

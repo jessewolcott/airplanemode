@@ -13,7 +13,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import httpx  # noqa: E402
 
-from router import PORTAL_DNS, PORTAL_RULE, UPSTREAM_NET, UPSTREAM_SECTION, WWAN_METRIC, OpenWrtRouter, RouterError  # noqa: E402
+from router import (BLOCK_PREFIX, PORTAL_DNS, PORTAL_RULE, UPSTREAM_NET, UPSTREAM_SECTION, VPN_FWD, VPN_NET,  # noqa: E402
+                    VPN_PEER, VPN_ZONE, WWAN_METRIC, OpenWrtRouter, RouterError, block_rule_name)
+from vpn import parse_wg_conf  # noqa: E402
 
 
 async def main():
@@ -130,6 +132,64 @@ async def main():
         assert all(a in (dns.get("address") or []) for a in other), (other, dns.get("address"))
         print("ok   offline popup off: wildcard removed, rule disabled, other DNS entries kept", other)
 
+        # ---- connected devices + pause ----
+        devs = await r.devices()
+        assert isinstance(devs, list), devs
+        mac = "3c:22:fb:10:20:30"
+        await r.set_device_paused(mac, True)
+        await r.set_device_paused(mac, True)  # idempotent
+        fw = await uci("firewall")
+        rule = fw[block_rule_name(mac, "wan")]
+        assert rule[".type"] == "rule" and rule["src_mac"] == mac and rule["dest"] == "wan" and rule["target"] == "REJECT", rule
+        assert rule["proto"] == "all", rule
+        assert [d for d in await r.devices() if d["mac"] == mac][0]["paused"] is True
+        print(f"ok   devices: DHCP leases readable ({len(devs)} now), pause adds a REJECT rule to wan")
+
+        # ---- data-use counters: must not hang (live numbers need real netifd) ----
+        t0 = asyncio.get_running_loop().time()
+        counters = await r.uplink_counters()
+        assert asyncio.get_running_loop().time() - t0 < 25, "counters must not hang"
+        print("ok   uplink counters return:", counters, "(numbers: verify on hardware)")
+
+        # ---- home VPN ----
+        priv, pub, psk = ("yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=", "xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=",
+                          "ME0ylvsvB9xPdzTBBHtbAoCnJuN2D4BdaFDpG6wdcMs=")
+        cfg = parse_wg_conf(f"[Interface]\nPrivateKey = {priv}\nAddress = 10.8.0.2/24\nDNS = 10.8.0.1\n"
+                            f"[Peer]\nPublicKey = {pub}\nPresharedKey = {psk}\nEndpoint = vpn.example.net:51820\n"
+                            "AllowedIPs = 0.0.0.0/0, ::/0\n")
+        await r.set_vpn(cfg, True)
+        net, fw = await uci("network"), await uci("firewall")
+        i, p = net[VPN_NET], net[VPN_PEER]
+        assert i["proto"] == "wireguard" and i["private_key"] == priv and i["metric"] == "5" and i["disabled"] == "0", i
+        assert p[".type"] == f"wireguard_{VPN_NET}" and p["public_key"] == pub and p["endpoint_host"] == "vpn.example.net", p
+        assert p["route_allowed_ips"] == "1" and p["preshared_key"] == psk and "0.0.0.0/0" in p["allowed_ips"], p
+        z = fw[VPN_ZONE]
+        assert z["name"] == "vpn" and VPN_NET in z["network"] and z["masq"] == "1", z
+        assert fw[VPN_FWD]["src"] == "lan" and fw[VPN_FWD]["dest"] == "vpn", fw[VPN_FWD]
+        assert fw[block_rule_name(mac, "vpn")]["dest"] == "vpn", "paused devices must be blocked from the VPN too"
+        shown = await r.vpn_config()
+        assert shown["enabled"] and shown["endpoint"] == "vpn.example.net:51820" and priv not in str(shown) and psk not in str(shown), shown
+        # re-saving without a preshared key removes it; disabling keeps the config
+        await r.set_vpn({**cfg, "preshared_key": None}, True)
+        assert "preshared_key" not in (await uci("network"))[VPN_PEER]
+        await r.set_vpn_enabled(False)
+        assert (await uci("network"))[VPN_NET]["disabled"] == "1" and (await r.vpn_config())["enabled"] is False
+        st = await r.vpn_status()
+        print("ok   VPN: wireguard interface + peer + vpn zone + forwarding, keys not shown, on/off; status:", st)
+
+        await r.set_device_paused(mac, False)
+        fw = await uci("firewall")
+        assert not [n for n in fw if n.startswith(BLOCK_PREFIX)], "unpause must remove both rules"
+        await r.set_device_paused(mac, True)
+        await r.remove_vpn()
+        net, fw = await uci("network"), await uci("firewall")
+        assert VPN_NET not in net and VPN_PEER not in net and VPN_ZONE not in fw and VPN_FWD not in fw
+        assert block_rule_name(mac, "vpn") not in fw and block_rule_name(mac, "wan") in fw, \
+            "removing the VPN drops rules that point at its zone, keeps the wan pause"
+        await r.set_device_paused(mac, False)
+        assert await r.vpn_config() is None
+        print("ok   VPN removed cleanly (no rules left pointing at a missing zone); unpause cleans up")
+
         if user != "root":
             # the restricted login must be refused everything outside Wi-Fi settings
             denied = [
@@ -141,6 +201,9 @@ async def main():
                 ("uci", "set", {"config": "system", "section": "@system[0]", "values": {"hostname": "pwned"}}),
                 ("system", "board", {}),
                 ("rc", "init", {"name": "dropbear", "action": "stop"}),
+                ("luci-rpc", "getBoardJSON", {}),
+                ("luci.wireguard", "generateKeyPair", {}),
+                ("network.device", "set_state", {"name": "br-lan", "defer": True}),
             ]
             for obj, method, args in denied:
                 try:
@@ -148,7 +211,8 @@ async def main():
                     raise AssertionError(f"restricted login was ALLOWED {obj}.{method} {args}")
                 except RouterError:
                     pass
-            print(f"ok   restricted login is refused {len(denied)} out-of-scope calls (shell, files, system, rpcd, dropbear, rc)")
+            print(f"ok   restricted login is refused {len(denied)} out-of-scope calls "
+                  "(shell, files, system, rpcd, dropbear, rc, board info, key generation, device state)")
 
 
 if __name__ == "__main__":

@@ -12,8 +12,12 @@ private hotspot for your devices that:
   so your devices connect automatically in every new place.
 - **runs apps locally,** games and tools that work with no internet at all, including a small
   language model built into the box.
-- **has a simple admin panel** for picking the network to join and managing your hotspots,
-  from any phone.
+- **sends everything through your home VPN** (WireGuard) if you want, so the hotel's
+  network only sees encrypted traffic.
+- **shows who's connected and how much data you've used,** and lets you pause one device's
+  internet (a tablet streaming all night on a capped plane Wi-Fi).
+- **has a simple admin panel** for picking the network to join, the VPN, devices and your
+  hotspots, from any phone.
 
 This is the **platform repo**: the landing page, admin panel, shared services, hardware
 profiles and design docs. Each app lives in its own repo and plugs in as a container image.
@@ -65,6 +69,14 @@ flowchart LR
     page as a sign-in screen, so people find the apps and the *Get online* button without
     knowing the address. It switches off the moment any uplink is back, so it never gets
     in front of a hotel's own sign-in page.
+- **Home VPN.** Paste a WireGuard config (from your home router, wg-easy, PiVPN or a VPN
+  service) into the admin panel. Everything from your hotspot then goes through the tunnel.
+  The private key stays on the box. A VPN can't get past a hotel sign-in page, so at a new
+  hotel turn it off, sign in, and turn it back on; the landing page reminds you
+  ([decision 0010](docs/decisions/0010-home-vpn-devices-data-use.md)).
+- **Devices and data use.** The admin panel lists devices on your hotspots and can pause
+  one device's internet (it keeps the box's apps). It also counts data used per network,
+  measured on the box's uplink so it covers everyone.
 - **Changing Wi-Fi settings safely.** The admin service doesn't run with special
   privileges. It changes settings through the router's own management API, the same one the
   router's built-in admin page (LuCI) uses. It refuses to turn off your last working hotspot,
@@ -116,7 +128,9 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
 | Limited router login (`scripts/router-setup.sh`) | tested on real OpenWrt 24.10: every admin feature works, and 8 out-of-scope calls are refused |
 | Auto-join, Ethernet priority, offline popup (supervisor logic) | automated tests against the mock router; travel simulated in the browser |
 | Router side of those (route metrics, rebind off, popup DNS + firewall rule) | tested on real OpenWrt 24.10; the generated firewall ruleset passes nftables' own syntax check |
-| Live link status, scanning, reloading Wi-Fi on real radios | **needs a real device:** see the checklist in [docs/testing.md](docs/testing.md) |
+| Home VPN, device pause, data use (logic) | automated tests against the mock router; panel checked in the browser |
+| Router side of those (WireGuard interface + zone, pause rules, ACL) | tested on real OpenWrt 24.10 in Docker; ruleset passes nftables' syntax check |
+| Live link status, scanning, reloading Wi-Fi on real radios, a real tunnel, DHCP leases, byte counters | **needs a real device:** see the checklist in [docs/testing.md](docs/testing.md) |
 | Full stack with the 1.5B model | tested on a PC with Docker Desktop; speed on the R6S not yet measured |
 
 ## Set it up
@@ -146,7 +160,8 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
    - turns off DNS rebind protection so hotel sign-in pages load (keep it with
      `KEEP_REBIND_PROTECTION=1`);
    - points the name **`airplane.mode`** at the box;
-   - makes the Ethernet WAN preferred over Wi-Fi.
+   - makes the Ethernet WAN preferred over Wi-Fi;
+   - installs WireGuard support for the home VPN, if it's missing.
 
    On the first run, `update.sh` generates an **admin password** for the admin panel,
    prints it and saves it in `.env`. Write it down.
@@ -228,8 +243,8 @@ docs/decisions/       why things are the way they are
   [docs/testing.md](docs/testing.md)).
 - The admin service never uses the router's root login. It signs in as `airplanemode`,
   whose access list ([router/rpcd-acl-airplanemode.json](router/rpcd-acl-airplanemode.json))
-  covers only the wireless, network and firewall settings, Wi-Fi status, and applying
-  changes. It can't run commands, read files, or touch system settings, SSH or passwords.
+  covers only the wireless, network, firewall and DNS settings, Wi-Fi, interface, DHCP-lease
+  and WireGuard status, and applying changes. It can't run commands, read files, or touch system settings, SSH or passwords.
   This is tested against real OpenWrt ([decision 0008](docs/decisions/0008-least-privilege-router-login.md)).
 - `.env` holds the admin password and that limited router password. It's mode 600 and
   ignored by git. Anyone who can sign in to the admin panel can change your Wi-Fi settings,

@@ -11,6 +11,7 @@ Terms used here:
 """
 import copy
 import re
+import time
 
 UPSTREAM_SECTION = "airplanemode_up"   # the one STA interface we manage
 UPSTREAM_NET = "wwan"                  # its network interface, placed in the firewall's wan zone
@@ -23,7 +24,21 @@ PORTAL_IP = "10.255.255.1"
 PORTAL_DNS = f"/#/{PORTAL_IP}"
 PORTAL_RULE = "airplanemode_portal"
 
-HOTSPOT_SECURITY = ["sae-mixed", "psk2", "sae", "none"]
+# Home VPN (WireGuard). The tunnel gets a lower route metric than both uplinks, so with
+# AllowedIPs = 0.0.0.0/0 everything from the hotspot goes through it.
+VPN_NET = "amvpn"
+VPN_PEER = "airplanemode_vpn_peer"
+VPN_ZONE = "airplanemode_vpn"          # firewall zone section; the zone itself is named "vpn"
+VPN_ZONE_NAME = "vpn"
+VPN_FWD = "airplanemode_vpn_fwd"
+VPN_METRIC = "5"
+VPN_FRESH = 180                        # seconds: a handshake newer than this means the tunnel works
+
+# Paused devices: one firewall rule per device and outbound zone, so a paused device loses
+# the internet but still reaches the box's own apps.
+BLOCK_PREFIX = "airplanemode_block_"
+
+HOTSPOT_SECURITY =["sae-mixed", "psk2", "sae", "none"]
 UPSTREAM_SECURITY = ["none", "psk", "psk2", "psk-mixed", "sae", "sae-mixed"]
 MAC_RE = re.compile(r"^[0-9a-f]{2}(:[0-9a-f]{2}){5}$")
 
@@ -75,6 +90,17 @@ def guard_last_hotspot(overview, removing_id):
               if h["id"] != removing_id and not h["disabled"] and h["radio"] in radios_on]
     if not others:
         raise RouterError("That's the only hotspot that's on. Turning it off would lock everyone out; add another first.")
+
+
+def as_list(v):
+    """uci values come back as a string or a list."""
+    if not v:
+        return []
+    return v.split() if isinstance(v, str) else list(v)
+
+
+def block_rule_name(mac, zone):
+    return BLOCK_PREFIX + mac.replace(":", "") + ("" if zone == "wan" else "_" + zone)
 
 
 def scan_security(enc):
@@ -369,6 +395,154 @@ class OpenWrtRouter:
         await self.call("uci", "delete", {"config": "wireless", "section": hid})
         await self._apply("wireless")
 
+    # ---- helpers for sections the admin service owns ----
+    async def _put(self, config, name, stype, values, existing, drop=()):
+        """Create or update a named section; delete options in `drop` that aren't in `values`."""
+        cur = existing.get(name)
+        if cur is None:
+            await self.call("uci", "add", {"config": config, "type": stype, "name": name, "values": values})
+            return
+        await self.call("uci", "set", {"config": config, "section": name, "values": values})
+        for opt in drop:
+            if opt not in values and opt in cur:
+                await self.call("uci", "delete", {"config": config, "section": name, "option": opt})
+
+    async def _delete_sections(self, config, names, existing):
+        for n in names:
+            if n in existing:
+                await self.call("uci", "delete", {"config": config, "section": n})
+
+    # ---- connected devices ----
+    @staticmethod
+    def _paused(fw):
+        return {s.get("src_mac", "").lower() for n, s in fw.items() if n.startswith(BLOCK_PREFIX) and s.get("src_mac")}
+
+    async def devices(self):
+        try:
+            res = await self.call("luci-rpc", "getDHCPLeases", {"family": 4}, timeout=5)
+        except RouterError as e:
+            raise RouterError("Can't list devices: the router's luci-rpc API isn't available (is LuCI installed?).") from e
+        paused = self._paused(await self._uci("firewall"))
+        out = {}
+        for lease in res.get("dhcp_leases") or []:
+            mac = (lease.get("macaddr") or "").lower()
+            if mac:
+                out[mac] = {"mac": mac, "ip": lease.get("ipaddr"), "name": lease.get("hostname") or "",
+                            "expires": lease.get("expires"), "paused": mac in paused}
+        for mac in paused - set(out):
+            out[mac] = {"mac": mac, "ip": None, "name": "", "expires": None, "paused": True}
+        return sorted(out.values(), key=lambda d: (d["name"] == "", d["name"].lower(), d["mac"]))
+
+    async def _sync_blocks(self, paused, vpn_zone):
+        """Make the pause rules match `paused` (MACs), for wan and, if it exists, the VPN zone."""
+        fw = await self._uci("firewall")
+        want = {}
+        for mac in paused:
+            for zone in ["wan"] + ([VPN_ZONE_NAME] if vpn_zone else []):
+                want[block_rule_name(mac, zone)] = {
+                    "name": f"AirplaneMode pause {mac}", "src": "lan", "dest": zone, "src_mac": mac,
+                    "proto": "all", "target": "REJECT"}
+        for name in [n for n in fw if n.startswith(BLOCK_PREFIX) and n not in want]:
+            await self.call("uci", "delete", {"config": "firewall", "section": name})
+        for name, values in want.items():
+            cur = fw.get(name)
+            if cur is None or any(cur.get(k) != v for k, v in values.items()):
+                await self._put("firewall", name, "rule", values, fw)
+
+    async def set_device_paused(self, mac, paused):
+        mac = check_mac(mac)
+        if not mac:
+            raise RouterError("Which device? (MAC address missing)")
+        fw = await self._uci("firewall")
+        now = self._paused(fw)
+        want = (now | {mac}) if paused else (now - {mac})
+        if want == now:
+            return
+        await self._sync_blocks(want, VPN_ZONE in fw)
+        await self._apply("firewall")
+
+    # ---- data use ----
+    async def uplink_counters(self):
+        """Byte counters of the uplinks that are up: {"ethernet": {rx, tx}, "wifi": {rx, tx}}."""
+        out = {}
+        for key, iface in (("ethernet", self.wan_iface), ("wifi", UPSTREAM_NET)):
+            try:
+                st = await self.call("network.interface", "status", {"interface": iface}, timeout=5)
+                dev = st.get("l3_device") or st.get("device")
+                if not st.get("up") or not dev:
+                    continue
+                stats = (await self.call("network.device", "status", {"name": dev}, timeout=5)).get("statistics") or {}
+                out[key] = {"rx": int(stats.get("rx_bytes") or 0), "tx": int(stats.get("tx_bytes") or 0)}
+            except (RouterError, ValueError):
+                continue
+        return out
+
+    # ---- home VPN ----
+    async def vpn_config(self):
+        net = await self._uci("network")
+        i, p = net.get(VPN_NET), net.get(VPN_PEER)
+        if not i or not p:
+            return None
+        return {"enabled": i.get("disabled") != "1", "addresses": as_list(i.get("addresses")),
+                "dns": as_list(i.get("dns")), "endpoint": f"{p.get('endpoint_host')}:{p.get('endpoint_port')}",
+                "public_key": p.get("public_key"), "allowed_ips": as_list(p.get("allowed_ips"))}
+
+    async def vpn_status(self):
+        try:
+            inst = await self.call("luci.wireguard", "getWgInstances", {}, timeout=5)
+        except RouterError:
+            return {"up": None}  # unknown: luci-proto-wireguard missing, or no access
+        d = inst.get(VPN_NET)
+        if not d:
+            return {"up": False}
+        peer = (d.get("peers") or [{}])[0]
+
+        def num(v):
+            return int(v) if str(v or "").isdigit() else 0
+        return {"up": True, "handshake": num(peer.get("latest_handshake")) or None,
+                "rx": num(peer.get("transfer_rx")), "tx": num(peer.get("transfer_tx"))}
+
+    async def set_vpn(self, cfg, enabled=True):
+        net = await self._uci("network")
+        iface = {"proto": "wireguard", "private_key": cfg["private_key"], "addresses": cfg["addresses"],
+                 "metric": VPN_METRIC, "disabled": "0" if enabled else "1"}
+        if cfg.get("dns"):
+            iface["dns"] = cfg["dns"]
+        if cfg.get("mtu"):
+            iface["mtu"] = str(cfg["mtu"])
+        await self._put("network", VPN_NET, "interface", iface, net, drop=("dns", "mtu"))
+        peer = {"description": "AirplaneMode home VPN", "public_key": cfg["public_key"],
+                "endpoint_host": cfg["endpoint_host"], "endpoint_port": str(cfg["endpoint_port"]),
+                "allowed_ips": cfg["allowed_ips"], "route_allowed_ips": "1",
+                "persistent_keepalive": str(cfg["keepalive"])}
+        if cfg.get("preshared_key"):
+            peer["preshared_key"] = cfg["preshared_key"]
+        await self._put("network", VPN_PEER, f"wireguard_{VPN_NET}", peer, net, drop=("preshared_key",))
+        fw = await self._uci("firewall")
+        await self._put("firewall", VPN_ZONE, "zone", {
+            "name": VPN_ZONE_NAME, "network": [VPN_NET], "input": "REJECT", "output": "ACCEPT",
+            "forward": "REJECT", "masq": "1", "mtu_fix": "1"}, fw)
+        await self._put("firewall", VPN_FWD, "forwarding", {"src": "lan", "dest": VPN_ZONE_NAME}, fw)
+        await self._sync_blocks(self._paused(fw), True)
+        await self._apply("network", "firewall")
+
+    async def set_vpn_enabled(self, enabled):
+        net = await self._uci("network")
+        if VPN_NET not in net:
+            raise RouterError("No home VPN is set up yet.")
+        await self.call("uci", "set", {"config": "network", "section": VPN_NET,
+                                       "values": {"disabled": "0" if enabled else "1"}})
+        await self._apply("network")
+
+    async def remove_vpn(self):
+        net = await self._uci("network")
+        await self._delete_sections("network", [VPN_PEER, VPN_NET], net)
+        fw = await self._uci("firewall")
+        paused = self._paused(fw)
+        await self._delete_sections("firewall", [VPN_FWD, VPN_ZONE], fw)
+        await self._sync_blocks(paused, False)
+        await self._apply("network", "firewall")
+
 
 # ---------------- Mock ----------------
 class MockRouter:
@@ -400,6 +574,15 @@ class MockRouter:
         self.ethernet = False          # is a WAN cable plugged in (with internet behind it)?
         self.portal_on = False         # offline popup state
         self.in_range = {n["ssid"] for n in self.NEARBY}  # which nearby networks are visible
+        self.vpn = None                # {"cfg": parsed config, "enabled": bool}
+        self.paused = set()
+        self.counters = {"ethernet": {"rx": 0, "tx": 0}, "wifi": {"rx": 0, "tx": 0}}
+        self.devices_list = [
+            {"mac": "3c:22:fb:10:20:30", "ip": "192.168.2.140", "name": "iPhone"},
+            {"mac": "a4:83:e7:44:55:66", "ip": "192.168.2.152", "name": "MacBook-Air"},
+            {"mac": "f8:0f:f9:77:88:99", "ip": "192.168.2.163", "name": "Pixel-8"},
+            {"mac": "74:c2:46:aa:bb:cc", "ip": "192.168.2.171", "name": ""},
+        ]
         self._n = 0
 
     def _net(self, ssid):
@@ -460,8 +643,64 @@ class MockRouter:
         if not net or (net["security"] != "none" and self.upstream.get("_key") != net.get("password")):
             return "offline"
         if net["portal"] and net["ssid"] not in self.portal_cleared:
-            return "captive"
+            # a full-tunnel VPN can't get past a sign-in page: everything just times out
+            return "offline" if self._vpn_on() else "captive"
         return "online"
+
+    def _vpn_on(self):
+        return bool(self.vpn and self.vpn["enabled"])
+
+    # ---- devices, data use, VPN (mock) ----
+    async def devices(self):
+        out = [dict(d, expires=43000, paused=d["mac"] in self.paused) for d in self.devices_list]
+        return sorted(out, key=lambda d: (d["name"] == "", d["name"].lower(), d["mac"]))
+
+    async def set_device_paused(self, mac, paused):
+        mac = check_mac(mac)
+        if not mac:
+            raise RouterError("Which device? (MAC address missing)")
+        (self.paused.add if paused else self.paused.discard)(mac)
+
+    async def uplink_counters(self):
+        """Each call pretends some traffic went by on the uplinks that are up."""
+        out = {}
+        if self.ethernet:
+            c = self.counters["ethernet"]
+            c["rx"] += 3_000_000
+            c["tx"] += 400_000
+            out["ethernet"] = dict(c)
+        if (await self.upstream_status())["connected"]:
+            c = self.counters["wifi"]
+            c["rx"] += 1_500_000
+            c["tx"] += 200_000
+            out["wifi"] = dict(c)
+        return out
+
+    async def vpn_config(self):
+        if not self.vpn:
+            return None
+        c = self.vpn["cfg"]
+        return {"enabled": self.vpn["enabled"], "addresses": c["addresses"], "dns": c["dns"],
+                "endpoint": f"{c['endpoint_host']}:{c['endpoint_port']}", "public_key": c["public_key"],
+                "allowed_ips": c["allowed_ips"]}
+
+    async def vpn_status(self):
+        if not self._vpn_on():
+            return {"up": False}
+        ok = self.internet() == "online"
+        return {"up": True, "handshake": int(time.time()) - 20 if ok else None,
+                "rx": 52_000_000 if ok else 0, "tx": 7_000_000 if ok else 0}
+
+    async def set_vpn(self, cfg, enabled=True):
+        self.vpn = {"cfg": cfg, "enabled": bool(enabled)}
+
+    async def set_vpn_enabled(self, enabled):
+        if not self.vpn:
+            raise RouterError("No home VPN is set up yet.")
+        self.vpn["enabled"] = bool(enabled)
+
+    async def remove_vpn(self):
+        self.vpn = None
 
     def clear_portal(self):
         if self.upstream:

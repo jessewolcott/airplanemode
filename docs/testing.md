@@ -72,7 +72,9 @@ docker rm -f owrt-test
 Last run (2026-11-21, OpenWrt 24.10.4): all checks pass. That covers login and bad
 passwords, joining an open network and a WPA2 network with MAC clone, the `wwan` interface
 plus firewall zone, leaving, saving/adding/deleting hotspots, the lockout guard, and changes
-being committed. In an unprivileged container netifd itself hangs, so live link status and
+being committed. Since decision 0010 it also covers the WireGuard interface, peer, zone and
+forwarding, device pause rules, and the three extra read calls (DHCP leases, WireGuard status,
+device counters), and checks 11 out-of-scope calls are refused. In an unprivileged container netifd itself hangs, so live link status and
 Wi-Fi reloads can't be checked there.
 
 ## On the device: checklist
@@ -111,5 +113,17 @@ Things only real hardware can prove. Tick them off here as they're verified.
       settings, and the change survives a reboot.
 - [ ] **Port 8080 is not reachable from the upstream side** (from another device on the
       hotel network, `http://<box-upstream-ip>:8080` must fail).
+- [ ] **Home VPN:** paste a real WireGuard config; the handshake shows in the admin panel
+      within ~10 s, a phone on the hotspot shows the home IP (e.g. on an IP-lookup site),
+      and turning the VPN off goes back to the hotel's IP. With the tunnel's far end
+      unreachable, nothing leaks (traffic stops). Check DNS (does dnsmasq still ask the
+      hotel's resolver?) and whether the box's own Docker traffic goes through the tunnel.
+- [ ] **VPN behind a sign-in page:** the landing page says *Waiting for the home VPN*;
+      VPN off → sign in → VPN on works.
+- [ ] **Devices:** the admin panel lists phones on the hotspot with names, and marks
+      *this device*. Pausing one stops its internet but `http://airplane.mode:8080` still
+      works on it; resuming brings it back. Also with the VPN on.
+- [ ] **Data use:** downloading a known-size file on a phone shows up in the panel within a
+      minute, under the right network name.
 - [ ] The model's speed on the R6S (tokens/s). Update decision 0003 with the number.
 - [ ] Temperature and power draw with both adapters and the model busy.

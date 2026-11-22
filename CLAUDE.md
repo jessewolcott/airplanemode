@@ -53,8 +53,13 @@ VS Code tasks (`.vscode/tasks.json`) wrap all of the above.
 - Save changes with **`uci apply`**, not `uci commit`: ubus sessions aren't allowed to
   commit (found by testing against real OpenWrt).
 - Names the admin service owns: `wireless.airplanemode_up` (STA), network `wwan` (metric 20),
-  firewall redirect `airplanemode_portal`, dnsmasq address `/#/10.255.255.1` (offline popup).
-  Don't touch other sections.
+  firewall redirect `airplanemode_portal`, dnsmasq address `/#/10.255.255.1` (offline popup),
+  home VPN: network `amvpn` (wireguard, metric 5) + `airplanemode_vpn_peer`, firewall zone
+  `airplanemode_vpn` (name `vpn`) + forwarding `airplanemode_vpn_fwd`; device pause: firewall
+  rules `airplanemode_block_<mac>[_vpn]`. Don't touch other sections. Rules must never point
+  at a zone that doesn't exist (fw4 refuses the whole ruleset).
+- Every endpoint that changes the router takes `router_lock` (main.py): the supervisor and
+  requests share one ubus session and `uci apply` applies everything staged.
 - **Offline popup only when there's no uplink at all** (no WAN and no wwan link), after 2
   supervisor ticks and never during a join grace period. Any uplink turns it off immediately,
   so it can't hide a hotel's real sign-in page.
@@ -101,9 +106,8 @@ Done and pushed (CI green):
 - restricted router login;
 - supervisor (auto-join, Ethernet first, offline popup);
 - rebind-off and DNS fixes;
-- hardening pass: router changes serialized by `router_lock` in `admin/main.py` (any new
-  endpoint that changes the router must take it), lockout guard ignores hotspots on radios
-  that are off, login guesses serialized, CI actions on v7.
+- hardening pass (router_lock, lockout guard on radios that are off, login throttling, CI v7);
+- home VPN (WireGuard), connected devices with pause, data use per network (decision 0010).
 
 **No real hardware has been tested yet.** The R6S and adapters aren't bought. Parts:
 - NanoPi R6S 8 GB with the metal case,
@@ -117,5 +121,6 @@ Open follow-ups:
 2. Darklight: understand free-text commands without the model (GL.iNet profile). Work in
    `../airplanemode-darklight`.
 3. Measure model tokens/s on the R6S, update decision 0003, and maybe spike RKLLM (NPU).
-4. Narrow the restricted login's `network`/`firewall` write access (decision 0008
+4. Home VPN: bypass the tunnel automatically for hotel sign-in pages (decision 0010).
+5. Narrow the restricted login's `network`/`firewall` write access (decision 0008
    consequences) if it ever matters.

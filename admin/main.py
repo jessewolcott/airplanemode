@@ -3,6 +3,7 @@
 Public:
   GET  /api/status            internet state (online / captive / offline), how (ethernet / wifi),
                               sign-in link, what the box is doing (joining a saved network?)
+  GET  /api/apps              the apps on the landing page (portal/apps.json minus the hidden ones)
 Admin (password, cookie session):
   POST /api/admin/login       {password}
   POST /api/admin/logout
@@ -24,6 +25,9 @@ Admin (password, cookie session):
   PUT  /api/admin/vpn         {config: WireGuard .conf text, enabled}
   POST /api/admin/vpn/enabled {enabled}
   DELETE /api/admin/vpn
+  GET  /api/admin/apps        every installed app, with "enabled" (on the menu or not)
+  PUT  /api/admin/apps/{id}   {enabled}                    (hide/show an app on the menu)
+  GET  /api/admin/session     200 if the caller's am_admin cookie is a live session (apps ask this)
 UI:
   /admin/                     the admin panel (static)
 

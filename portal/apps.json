@@ -2,7 +2,7 @@
   {
     "id": "darklight",
     "name": "The Dark Light",
-    "description": "A storm, a dark lighthouse, a ship heading for the rocks. A text adventure with five endings, narrated by the on-board model.",
+    "description": "A storm, a dark lighthouse, a ship heading for the rocks. A text adventure with seven endings, narrated by the on-board model.",
     "path": "/darklight/",
     "monogram": "DL",
     "color": "#f2b34b",

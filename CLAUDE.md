@@ -3,14 +3,20 @@
 Self-hosted, offline-first apps for a travel router (NanoPi R6S main target, GL.iNet lite).
 This repo is the **platform**: landing page, admin service (Wi-Fi control + connectivity
 supervisor), Caddy front door, shared llama.cpp model, hardware profiles, docs. Apps live in
-their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airplanemode-guide`) and plug in as pinned container images.
-Start with `README.md`, then `docs/decisions/` (0001–0009). They explain *why* things are
+their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airplanemode-guide`)
+and plug in as pinned container images.
+Start with `README.md`, then `docs/decisions/` (0001–0010). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
 
-- All project folders live in `H:\Github`. H: is **exFAT**, so git needs
-  `git config --global --add safe.directory H:/Github/<repo>` for each new repo.
+- All of this project's repos live side by side in **`H:\Github\airplanemode\`**: `airplanemode`
+  (this platform repo), `airplanemode-darklight`, `airplanemode-drop`, `airplanemode-guide`.
+  New app repos go there too. H: is **exFAT**, so git needs
+  `git config --global --add safe.directory H:/Github/airplanemode/<repo>` for each new repo.
+- Moving folders on H: while VS Code has them open can half-fail: Windows moves some files
+  and leaves locked folders behind. Close VS Code first, then check `git status` in the new
+  place (a missing file shows up as deleted).
 - Docker Desktop (Linux engine). The `default` context works. If Docker Desktop won't start
   and its log says it can't remove `...\AppData\Local\Docker\run\userAnalyticsOtlpHttp.sock`,
   quit Docker Desktop and rename `%LOCALAPPDATA%\Docker\run` (a stale socket file).

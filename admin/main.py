@@ -30,6 +30,7 @@ import logging
 import os
 import secrets
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
@@ -66,7 +67,21 @@ else:
                            lan_ip=os.getenv("LAN_IP", "192.168.2.1"), http_port=os.getenv("HTTP_PORT", "8080"),
                            wan_iface=os.getenv("WAN_IFACE", "wan"))
 
-app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+# One change to the router at a time. The supervisor and admin requests share one ubus
+# session, and "uci apply" applies everything staged in it, so interleaved changes could
+# apply each other half-done.
+router_lock = asyncio.Lock()
+
+
+@asynccontextmanager
+async def lifespan(_app):
+    task = asyncio.create_task(_supervise_forever()) if SUPERVISE_INTERVAL > 0 else None
+    yield
+    if task:
+        task.cancel()
+
+
+app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
 
 
 @app.exception_handler(RouterError)
@@ -173,6 +188,10 @@ class Supervisor:
         return f"joining {best['ssid']}"
 
     async def tick(self, now=None):
+        async with router_lock:
+            return await self._tick(now)
+
+    async def _tick(self, now):
         now = time.monotonic() if now is None else now
         eth, wifi = await self.links()
         linked = bool(eth.get("connected") or wifi.get("connected"))
@@ -210,12 +229,6 @@ async def _supervise_forever():
         except Exception as e:  # never let the loop die
             log.warning("supervisor tick failed: %s", e)
         await asyncio.sleep(SUPERVISE_INTERVAL)
-
-
-@app.on_event("startup")
-async def _start():
-    if SUPERVISE_INTERVAL > 0:
-        asyncio.create_task(_supervise_forever())
 
 
 # ---------------- internet / captive portal ----------------
@@ -268,7 +281,9 @@ async def status(refresh: bool = False):
 
 
 # ---------------- admin auth ----------------
+# Sessions live in memory: restarting the admin service signs everyone out.
 _sessions: dict[str, float] = {}
+_login_lock = asyncio.Lock()   # one password check at a time, so the delay can't be run in parallel
 COOKIE = "am_admin"
 
 
@@ -280,9 +295,13 @@ class Login(BaseModel):
 async def login(body: Login, response: Response):
     if not ADMIN_PASSWORD:
         raise HTTPException(503, "Admin is disabled: set ADMIN_PASSWORD in .env and restart.")
-    if not hmac.compare_digest(body.password.encode(), ADMIN_PASSWORD.encode()):
-        await asyncio.sleep(1.5)  # slow down guessing
-        raise HTTPException(401, "Wrong password.")
+    async with _login_lock:
+        if not hmac.compare_digest(body.password.encode(), ADMIN_PASSWORD.encode()):
+            await asyncio.sleep(1.5)  # slow down guessing
+            raise HTTPException(401, "Wrong password.")
+    now = time.time()
+    for t in [t for t, exp in _sessions.items() if exp < now]:
+        del _sessions[t]
     token = secrets.token_urlsafe(32)
     _sessions[token] = time.time() + SESSION_HOURS * 3600
     response.set_cookie(COOKIE, token, httponly=True, samesite="strict", max_age=SESSION_HOURS * 3600, path="/")
@@ -363,7 +382,8 @@ async def join(body: Upstream, _=Depends(require_admin)):
     ssid = check_ssid(body.ssid)
     key = check_key(body.encryption, body.key, UPSTREAM_SECURITY)
     mac = check_mac(body.macaddr)
-    await router.join(body.radio, ssid, body.encryption, key, mac)
+    async with router_lock:
+        await router.join(body.radio, ssid, body.encryption, key, mac)
     store.remember(body.radio, ssid, body.encryption, key, mac)
     store.data["paused"] = False
     store.save()
@@ -375,7 +395,8 @@ async def join(body: Upstream, _=Depends(require_admin)):
 
 @app.delete("/api/admin/upstream")
 async def leave(_=Depends(require_admin)):
-    await router.leave()
+    async with router_lock:
+        await router.leave()
     store.data["paused"] = True  # otherwise auto-join would reconnect straight away
     store.save()
     supervisor.joining, supervisor.grace_until = None, 0.0
@@ -391,7 +412,7 @@ async def set_autojoin(body: AutoJoin, _=Depends(require_admin)):
     return {"ok": True}
 
 
-@app.delete("/api/admin/networks/{ssid}")
+@app.delete("/api/admin/networks/{ssid:path}")  # :path, since SSIDs may contain "/"
 async def forget(ssid: str, _=Depends(require_admin)):
     if not store.forget(ssid):
         raise HTTPException(404, "No saved network with that name.")
@@ -400,18 +421,21 @@ async def forget(ssid: str, _=Depends(require_admin)):
 
 @app.post("/api/admin/hotspots")
 async def add_hotspot(body: NewHotspot, _=Depends(require_admin)):
-    return {"id": await router.add_hotspot(body.radio, body.ssid, body.encryption, body.key)}
+    async with router_lock:
+        return {"id": await router.add_hotspot(body.radio, body.ssid, body.encryption, body.key)}
 
 
 @app.put("/api/admin/hotspots/{hid}")
 async def save_hotspot(hid: str, body: Hotspot, _=Depends(require_admin)):
-    await router.save_hotspot(hid, body.ssid, body.encryption, body.key, body.disabled)
+    async with router_lock:
+        await router.save_hotspot(hid, body.ssid, body.encryption, body.key, body.disabled)
     return {"ok": True}
 
 
 @app.delete("/api/admin/hotspots/{hid}")
 async def delete_hotspot(hid: str, _=Depends(require_admin)):
-    await router.delete_hotspot(hid)
+    async with router_lock:
+        await router.delete_hotspot(hid)
     return {"ok": True}
 
 

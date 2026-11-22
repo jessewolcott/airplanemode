@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from urllib.parse import quote
 
 os.environ.update(ROUTER_BACKEND="mock", ADMIN_PASSWORD="test-pass", SUPERVISE_INTERVAL="0",
                   DATA_DIR=tempfile.mkdtemp(prefix="am-test-"), JOIN_GRACE="45", PORTAL_AFTER_TICKS="2")
@@ -79,7 +80,9 @@ def test_captive_flow():
     assert ok(c.get("/api/status?refresh=1"))["internet"] == "offline"
     ok(c.post("/api/admin/upstream", headers=H, json={"radio": "radio1", "ssid": "CoffeeCorner", "encryption": "psk2", "key": "latte2024", "macaddr": "12:34:56:78:9a:bc"}))
     assert ok(c.get("/api/status?refresh=1"))["internet"] == "online"
-    assert ok(c.get("/api/admin/wifi"))["upstream"]["macaddr"] == "12:34:56:78:9a:bc"
+    w = ok(c.get("/api/admin/wifi"))
+    assert w["upstream"]["macaddr"] == "12:34:56:78:9a:bc"
+    assert "latte2024" not in str(w["upstream"]), "the upstream password must not be handed out"
     ok(c.delete("/api/admin/upstream", headers=H))
     assert ok(c.get("/api/status?refresh=1"))["internet"] == "offline"
 
@@ -100,6 +103,24 @@ def test_hotspots():
     assert a not in ids and new in ids
     # the public status never exposes keys
     assert "key" not in str(ok(c.get("/api/status")))
+
+
+def test_guard_ignores_hotspots_on_radios_that_are_off():
+    r = main.router
+    saved_radios, saved_hotspots = [dict(x) for x in r.radios], [dict(h) for h in r.hotspots]
+    try:
+        r.hotspots = [
+            {"id": "a", "radio": "radio1", "ssid": "Main", "encryption": "psk2", "key": "a-long-enough-key", "disabled": False, "network": "lan"},
+            {"id": "b", "radio": "radio0", "ssid": "Other", "encryption": "psk2", "key": "a-long-enough-key", "disabled": False, "network": "lan"},
+        ]
+        r.radios[0]["disabled"] = True  # radio0 is off, so "Other" isn't really broadcasting
+        r_ = c.put("/api/admin/hotspots/a", headers=H, json={"ssid": "Main", "encryption": "psk2", "key": "a-long-enough-key", "disabled": True})
+        assert r_.status_code == 400 and "lock" in r_.json()["detail"], r_.text
+        assert c.delete("/api/admin/hotspots/a", headers=H).status_code == 400
+        r.radios[0]["disabled"] = False
+        ok(c.put("/api/admin/hotspots/a", headers=H, json={"ssid": "Main", "encryption": "psk2", "key": "a-long-enough-key", "disabled": True}))
+    finally:
+        r.radios, r.hotspots = saved_radios, saved_hotspots
 
 
 def tick(now):
@@ -196,6 +217,43 @@ def test_forget():
     assert c.delete("/api/admin/networks/CoffeeCorner", headers=H).status_code == 404
     main.router.in_range = {"CoffeeCorner"}
     assert tick(0)["joining"] is None
+    # names with a slash (allowed in SSIDs) can be forgotten too
+    main.store.remember("radio1", "Cafe 24/7", "none", None, None)
+    ok(c.delete("/api/admin/networks/" + quote("Cafe 24/7", safe=""), headers=H))
+    assert ok(c.get("/api/admin/wifi"))["saved"] == []
+
+
+def test_router_changes_are_serialized():
+    """The supervisor and admin requests must not interleave router changes."""
+    order = []
+
+    async def run():
+        orig = main.router.leave
+
+        async def slow_leave():
+            order.append("leave start")
+            await asyncio.sleep(0.05)
+            order.append("leave end")
+            await orig()
+
+        main.router.leave = slow_leave
+        try:
+            async def admin_change():
+                async with main.router_lock:
+                    await main.router.leave()
+
+            async def supervisor_tick():
+                await asyncio.sleep(0.01)
+                await main.supervisor.tick(0)
+                order.append("tick")
+
+            await asyncio.gather(admin_change(), supervisor_tick())
+        finally:
+            main.router.leave = orig
+
+    reset_world()
+    asyncio.run(run())
+    assert order == ["leave start", "leave end", "tick"], order
 
 
 def test_offline_popup_waits_during_join():

@@ -306,11 +306,12 @@ function renderHotspots() {
   });
 }
 
-$("#addSec").addEventListener("change", () => $("#addKey").closest("div").parentElement.classList.toggle("hidden", $("#addSec").value === "none"));
+const syncAddKey = () => $("#addKey").closest("div").parentElement.classList.toggle("hidden", $("#addSec").value === "none");
+$("#addSec").addEventListener("change", syncAddKey);
 $("#addForm").addEventListener("submit", e => { e.preventDefault(); busy(e.submitter || $("#addForm button.primary"), async () => {
   try {
     await api("POST", "/api/admin/hotspots", { radio: $("#addRadio").value, ssid: $("#addSsid").value, encryption: $("#addSec").value, key: $("#addKey").value || null });
-    $("#addForm").reset(); msg($("#addMsg"), "Hotspot added.", true);
+    $("#addForm").reset(); syncAddKey(); msg($("#addMsg"), "Hotspot added.", true);
     state = await api("GET", "/api/admin/wifi"); renderHotspots();
   } catch (err) { msg($("#addMsg"), err.message, false); }
 }); });

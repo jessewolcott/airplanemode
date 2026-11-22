@@ -52,7 +52,9 @@ docker run --rm --network airplanemode -v "$PWD/admin:/app:ro" \
 ```
 
 To test the **restricted login** too, install it the way a real router would, then run the
-same test as that user. It adds checks that out-of-scope calls are refused:
+same test as that user. It adds checks that out-of-scope calls are refused. The test expects
+a fresh router, so start from a new container (`docker rm -f owrt-test`, then repeat the
+`docker run`, `passwd` and wireless steps above) if you've already run it as root:
 
 ```sh
 docker exec owrt-test mkdir -p /opt/airplanemode/scripts /opt/airplanemode/router

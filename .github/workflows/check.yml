@@ -8,8 +8,8 @@ jobs:
   admin:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install -r admin/requirements.txt
@@ -22,7 +22,7 @@ jobs:
       matrix:
         hardware: [nanopi-r6s, glinet]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Compose file is valid for ${{ matrix.hardware }}
         run: |
           cp hardware/${{ matrix.hardware }}.env .env

@@ -67,6 +67,16 @@ def check_mac(mac):
     return mac
 
 
+def guard_last_hotspot(overview, removing_id):
+    """Refuse to turn off or remove the last hotspot that's actually broadcasting.
+    A hotspot on a switched-off radio doesn't count: nobody can connect to it."""
+    radios_on = {r["id"] for r in overview["radios"] if not r["disabled"]}
+    others = [h for h in overview["hotspots"]
+              if h["id"] != removing_id and not h["disabled"] and h["radio"] in radios_on]
+    if not others:
+        raise RouterError("That's the only hotspot that's on. Turning it off would lock everyone out; add another first.")
+
+
 def scan_security(enc):
     """Map an iwinfo scan 'encryption' object to an OpenWrt encryption value (None = unsupported)."""
     if not enc or not enc.get("enabled"):
@@ -318,10 +328,7 @@ class OpenWrtRouter:
 
     # ---- hotspots ----
     async def _guard_last_hotspot(self, removing_id):
-        ov = await self.overview()
-        others = [h for h in ov["hotspots"] if h["id"] != removing_id and not h["disabled"]]
-        if not others:
-            raise RouterError("That's the only hotspot that's on. Turning it off would lock everyone out; add another first.")
+        guard_last_hotspot(await self.overview(), removing_id)
 
     async def save_hotspot(self, hid, ssid, encryption, key, disabled):
         ssid = check_ssid(ssid)
@@ -412,7 +419,10 @@ class MockRouter:
         return changed
 
     async def overview(self):
-        return copy.deepcopy({"radios": self.radios, "hotspots": self.hotspots, "upstream": self.upstream})
+        ov = copy.deepcopy({"radios": self.radios, "hotspots": self.hotspots, "upstream": self.upstream})
+        if ov["upstream"]:  # like OpenWrt's overview: never hand out the upstream password
+            ov["upstream"] = {k: v for k, v in ov["upstream"].items() if not k.startswith("_")}
+        return ov
 
     async def upstream_status(self):
         if not self.upstream:
@@ -458,8 +468,7 @@ class MockRouter:
             self.portal_cleared.add(self.upstream["ssid"])
 
     async def _guard_last_hotspot(self, removing_id):
-        if not [h for h in self.hotspots if h["id"] != removing_id and not h["disabled"]]:
-            raise RouterError("That's the only hotspot that's on. Turning it off would lock everyone out; add another first.")
+        guard_last_hotspot(await self.overview(), removing_id)
 
     async def save_hotspot(self, hid, ssid, encryption, key, disabled):
         ssid = check_ssid(ssid)

@@ -100,7 +100,10 @@ Done and pushed (CI green):
 - admin panel (upstream join, MAC clone, hotspots, saved networks);
 - restricted router login;
 - supervisor (auto-join, Ethernet first, offline popup);
-- rebind-off and DNS fixes.
+- rebind-off and DNS fixes;
+- hardening pass: router changes serialized by `router_lock` in `admin/main.py` (any new
+  endpoint that changes the router must take it), lockout guard ignores hotspots on radios
+  that are off, login guesses serialized, CI actions on v7.
 
 **No real hardware has been tested yet.** The R6S and adapters aren't bought. Parts:
 - NanoPi R6S 8 GB with the metal case,
@@ -111,11 +114,8 @@ Done and pushed (CI green):
 
 Open follow-ups:
 1. Work through `docs/testing.md` → *On the device: checklist* once hardware arrives.
-2. Put the adapter parts list into the README hardware section (offered, not done).
-3. Darklight: understand free-text commands without the model (GL.iNet profile). Work in
+2. Darklight: understand free-text commands without the model (GL.iNet profile). Work in
    `../airplanemode-darklight`.
-4. Measure model tokens/s on the R6S, update decision 0003, and maybe spike RKLLM (NPU).
-5. CI warning: `actions/checkout@v4` / `setup-python@v5` run on deprecated Node 20. Bump to
-   current majors.
-6. Narrow the restricted login's `network`/`firewall` write access (decision 0008
+3. Measure model tokens/s on the R6S, update decision 0003, and maybe spike RKLLM (NPU).
+4. Narrow the restricted login's `network`/`firewall` write access (decision 0008
    consequences) if it ever matters.

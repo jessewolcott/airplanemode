@@ -83,6 +83,19 @@ flowchart LR
 | **USB-C power, 5 V / 3 A or better** | the R6S plus two adapters | A good USB-C PD power bank works too. |
 | *Optional:* short USB extension cable | moves an adapter off the metal case | Better range, and keeps the two adapters apart. |
 
+**The build this project is being tested on** (bought, not yet verified: see
+[docs/testing.md](docs/testing.md)):
+
+| Part | Job |
+|---|---|
+| NanoPi R6S, 8 GB, with the metal case | the box |
+| ALFA AWUS036ACHM (MT7610U, mt76x0u driver) | joins the hotel network (upstream); long range, low power |
+| ALFA AWUS036ACM (MT7612U, mt76x2u driver) | your hotspot; the best-proven MediaTek chip in AP mode |
+| Short USB extension cable | moves one adapter away from the case and the other adapter |
+| 5 V / 3 A USB-C power supply | power for the box plus both adapters |
+
+Put the hotspot adapter (AWUS036ACM) on the **USB 3.0** port.
+
 The R6S has one USB 3.0 and one USB 2.0 port, so both adapters fit without a hub. One
 adapter can do both jobs, but both networks then share one channel and get slower.
 
@@ -222,7 +235,8 @@ docs/decisions/       why things are the way they are
   ignored by git. Anyone who can sign in to the admin panel can change your Wi-Fi settings,
   so pick a real password for your hotspot.
 - The admin panel uses an HttpOnly, same-site session cookie and a custom request header
-  against cross-site requests, and slows down wrong-password attempts.
+  against cross-site requests, and slows down wrong-password attempts (one guess at a time,
+  1.5 s each). Sessions are kept in memory, so restarting the admin service signs everyone out.
 - DNS rebind protection is **off**, because hotel sign-in pages need it off. That weakens a
   defence against malicious websites reaching devices on your LAN by name. Keep it on with
   `KEEP_REBIND_PROTECTION=1 sh scripts/router-setup.sh` if you rarely use hotel Wi-Fi with

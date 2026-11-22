@@ -82,7 +82,7 @@ services:
 
   # ---- apps ----
   darklight:
-    image: ghcr.io/jessewolcott/airplanemode-darklight:0.1.0
+    image: ghcr.io/jessewolcott/airplanemode-darklight:0.2.0
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}
     mem_limit: ${DARKLIGHT_MEM:-256m}

@@ -112,6 +112,18 @@ services:
     mem_limit: ${CINEMA_MEM:-64m}
     restart: unless-stopped
 
+  # An endless feed of the videos in Drop's "QuickShot" folder. Comments, likes and views live
+  # in its own volume, so they survive restarts and updates.
+  quickshot:
+    image: ghcr.io/jessewolcott/airplanemode-quickshot:0.1.0
+    environment:
+      DROP_URL: http://drop:8000
+      ADMIN_URL: http://admin:8000    # the admin can delete any comment
+    volumes:
+      - quickshot-data:/data        # comments.json, stats.json
+    mem_limit: ${QUICKSHOT_MEM:-64m}
+    restart: unless-stopped
+
   guide:
     image: ghcr.io/jessewolcott/airplanemode-guide:0.1.0
     environment:
@@ -131,4 +143,5 @@ volumes:
   admin-data:
   drop-data:
   cinema-data:
+  quickshot-data:
   guide-data:

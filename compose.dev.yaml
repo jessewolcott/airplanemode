@@ -30,6 +30,10 @@ services:
     image: airplanemode-cinema:dev
     build: ../airplanemode-cinema
 
+  quickshot:
+    image: airplanemode-quickshot:dev
+    build: ../airplanemode-quickshot
+
   guide:
     image: airplanemode-guide:dev
     build: ../airplanemode-guide

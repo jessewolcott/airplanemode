@@ -38,6 +38,16 @@
     }
   },
   {
+    "id": "quickshot",
+    "name": "QuickShot",
+    "description": "An endless feed of the short videos in Drop's QuickShot folder. Swipe, like, comment.",
+    "path": "/quickshot/",
+    "monogram": "QS",
+    "color": "#9b7bff",
+    "category": "Entertainment",
+    "uses_llm": false
+  },
+  {
     "id": "guide",
     "name": "Travel Guide",
     "description": "All of Wikivoyage, offline. Look up any destination, or ask a question and get an answer from the guide.",

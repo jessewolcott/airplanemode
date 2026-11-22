@@ -104,7 +104,7 @@ services:
 
   # Plays the videos and music on Drop. The browser streams them from /drop/ directly.
   cinema:
-    image: ghcr.io/jessewolcott/airplanemode-cinema:0.1.0
+    image: ghcr.io/jessewolcott/airplanemode-cinema:0.1.1
     environment:
       DROP_URL: http://drop:8000
     volumes:

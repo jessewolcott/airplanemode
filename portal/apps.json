@@ -7,7 +7,8 @@
     "monogram": "DL",
     "color": "#f2b34b",
     "category": "Games",
-    "uses_llm": true
+    "uses_llm": true,
+    "icon": "/icons/darklight.svg"
   },
   {
     "id": "drop",
@@ -17,7 +18,8 @@
     "monogram": "Dp",
     "color": "#5fb8c9",
     "category": "Tools",
-    "uses_llm": false
+    "uses_llm": false,
+    "icon": "/icons/drop.svg"
   },
   {
     "id": "cinema",
@@ -35,7 +37,8 @@
         "audio/*"
       ],
       "url": "/cinema/#play={id}"
-    }
+    },
+    "icon": "/icons/cinema.svg"
   },
   {
     "id": "quickshot",
@@ -45,7 +48,8 @@
     "monogram": "QS",
     "color": "#9b7bff",
     "category": "Entertainment",
-    "uses_llm": false
+    "uses_llm": false,
+    "icon": "/icons/quickshot.svg"
   },
   {
     "id": "guide",
@@ -55,6 +59,7 @@
     "monogram": "TG",
     "color": "#5ec4b6",
     "category": "Travel",
-    "uses_llm": true
+    "uses_llm": true,
+    "icon": "/icons/guide.svg"
   }
 ]

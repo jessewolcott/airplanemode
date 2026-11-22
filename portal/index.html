@@ -44,13 +44,24 @@
   .btn.ghost { background: transparent; color: var(--ink); border-color: #5b4a2c; }
 
   h2.section { font-size: .75rem; font-family: var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); font-weight: 500; margin: 32px 0 12px; }
-  .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-  a.app { display: flex; gap: 14px; align-items: flex-start; padding: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; color: inherit; text-decoration: none; transition: border-color .15s, transform .15s; }
-  a.app:hover, a.app:focus-visible { border-color: var(--accent); outline: none; transform: translateY(-1px); }
-  .icon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font: 700 1rem var(--sans); color: #111; flex: none; }
-  .app h3 { margin: 0 0 2px; font-size: 1rem; }
-  .app p { margin: 0; color: var(--dim); font-size: .87rem; line-height: 1.45; }
-  .tag { display: inline-block; margin-top: 8px; font: .68rem var(--mono); color: var(--dim); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; }
+  /* apps as a home screen: rounded icons with the name underneath */
+  .apps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 10px; padding: 22px 12px 18px; border-radius: 22px;
+          background: radial-gradient(120% 90% at 20% 0%, #232a36 0%, #151a21 55%, #10141a 100%); border: 1px solid var(--line); }
+  @media (min-width: 560px) { .apps { grid-template-columns: repeat(auto-fill, 96px); justify-content: start; gap: 26px 18px; padding: 26px 22px 22px; } }
+  a.app { display: flex; flex-direction: column; align-items: center; gap: 8px; color: inherit; text-decoration: none; min-width: 0; -webkit-tap-highlight-color: transparent; outline: none; }
+  .tile { position: relative; width: 100%; max-width: 68px; aspect-ratio: 1; border-radius: 23%; overflow: hidden; display: grid; place-items: center;
+          box-shadow: 0 8px 18px -8px #000c, 0 0 0 1px #ffffff10; transition: transform .14s ease, box-shadow .14s ease; }
+  @media (min-width: 560px) { .tile { max-width: 76px; } }
+  .tile img { width: 100%; height: 100%; display: block; }
+  .tile .mono { font: 800 1.35rem var(--sans); color: #111; letter-spacing: -.02em; }
+  a.app:hover .tile { transform: translateY(-2px); box-shadow: 0 12px 22px -8px #000, 0 0 0 1px #ffffff1c; }
+  a.app:active .tile { transform: scale(.9); }
+  a.app:focus-visible .tile { box-shadow: 0 0 0 3px var(--accent); }
+  .app .name { font-size: .78rem; line-height: 1.2; text-align: center; max-width: 100%; overflow: hidden; overflow-wrap: anywhere; text-shadow: 0 1px 2px #0008;
+               display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .app .ai { position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px #151a21; }
+  .apps-note { color: var(--dim); font-size: .78rem; margin: 10px 4px 0; }
+  .apps-note i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 5px; vertical-align: 1px; }
   .empty { color: var(--dim); }
   footer { margin-top: 40px; color: var(--dim); font: .75rem var(--mono); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 </style>
@@ -90,6 +101,7 @@
 
   <h2 class="section">Apps</h2>
   <div class="apps" id="apps"><p class="empty">Loading apps…</p></div>
+  <p class="apps-note" id="appsNote" hidden><i></i>uses the on-board language model</p>
 
   <footer><span>Everything here runs on this box. No internet required.</span><span id="backend"></span></footer>
 </main>
@@ -100,14 +112,14 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "
 // The admin service leaves out apps the admin switched off; if it's down, show everything.
 fetch("/api/apps").then(r => r.ok ? r.json() : Promise.reject()).catch(() => fetch("/apps.json").then(r => r.json())).then(apps => {
   $("#apps").innerHTML = apps.length ? apps.map(a => `
-    <a class="app" href="${esc(a.path)}">
-      <span class="icon" style="background:${esc(a.color || "#8f8c84")}">${esc(a.monogram || a.name.slice(0, 2))}</span>
-      <span>
-        <h3>${esc(a.name)}</h3>
-        <p>${esc(a.description)}</p>
-        ${a.uses_llm ? '<span class="tag">uses the on-board model</span>' : ""}
+    <a class="app" href="${esc(a.path)}" title="${esc(a.description)}" aria-label="${esc(a.name)}: ${esc(a.description)}">
+      <span class="tile" style="background:${esc(a.color || "#8f8c84")}">
+        ${a.icon ? `<img src="${esc(a.icon)}" alt="" width="76" height="76">` : `<span class="mono">${esc(a.monogram || a.name.slice(0, 2))}</span>`}
+        ${a.uses_llm ? '<span class="ai" title="Uses the on-board language model"></span>' : ""}
       </span>
+      <span class="name">${esc(a.name)}</span>
     </a>`).join("") : '<p class="empty">No apps installed yet.</p>';
+  $("#appsNote").hidden = !apps.some(a => a.uses_llm);
 }).catch(() => { $("#apps").innerHTML = '<p class="empty">Could not load the app list.</p>'; });
 
 function describe(d) {

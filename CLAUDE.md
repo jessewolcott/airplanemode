@@ -130,7 +130,7 @@ Done and pushed (CI green):
   stack when the UI changes), app ideas in `docs/app-ideas.md`.
 - homepage + one-line installer (`../airplanemode-site`, not hosted yet; decisions 0011, 0012).
 - Cinema app (`../airplanemode-cinema`), Drop folders + admin "downloads off", app switches in
-  the admin panel (decision 0013). Released: Drop 0.2.0, Cinema 0.1.0.
+  the admin panel (decision 0013). Released: Drop 0.2.0, Cinema 0.1.1 (TV series).
 - QuickShot app (`../airplanemode-quickshot`, decision 0014): swipe feed over Drop's QuickShot
   folder; comments/likes/views in the `quickshot-data` volume. Released: 0.1.0.
 

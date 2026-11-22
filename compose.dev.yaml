@@ -26,6 +26,10 @@ services:
     image: airplanemode-drop:dev
     build: ../airplanemode-drop
 
+  cinema:
+    image: airplanemode-cinema:dev
+    build: ../airplanemode-cinema
+
   guide:
     image: airplanemode-guide:dev
     build: ../airplanemode-guide

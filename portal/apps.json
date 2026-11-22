@@ -20,6 +20,24 @@
     "uses_llm": false
   },
   {
+    "id": "cinema",
+    "name": "Cinema",
+    "description": "Watch the films and shows, and play the music, loaded onto Drop. Every device picks up where it left off.",
+    "path": "/cinema/",
+    "monogram": "Ci",
+    "color": "#e2685c",
+    "category": "Entertainment",
+    "uses_llm": false,
+    "opens": {
+      "from": "drop",
+      "types": [
+        "video/*",
+        "audio/*"
+      ],
+      "url": "/cinema/#play={id}"
+    }
+  },
+  {
     "id": "guide",
     "name": "Travel Guide",
     "description": "All of Wikivoyage, offline. Look up any destination, or ask a question and get an answer from the guide.",

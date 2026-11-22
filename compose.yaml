@@ -91,14 +91,25 @@ services:
     restart: unless-stopped
 
   drop:
-    image: ghcr.io/jessewolcott/airplanemode-drop:0.1.0
+    image: ghcr.io/jessewolcott/airplanemode-drop:0.2.0
     environment:
       DROP_MAX_BYTES: ${DROP_MAX_BYTES:-4g}
       DROP_MAX_FILE: ${DROP_MAX_FILE:-2g}
       DROP_KEEP_DAYS: ${DROP_KEEP_DAYS:-7}
+      ADMIN_URL: http://admin:8000    # to recognise the admin (who can turn downloads off)
     volumes:
       - drop-data:/data
     mem_limit: ${DROP_MEM:-128m}
+    restart: unless-stopped
+
+  # Plays the videos and music on Drop. The browser streams them from /drop/ directly.
+  cinema:
+    image: ghcr.io/jessewolcott/airplanemode-cinema:0.1.0
+    environment:
+      DROP_URL: http://drop:8000
+    volumes:
+      - cinema-data:/data           # posters only
+    mem_limit: ${CINEMA_MEM:-64m}
     restart: unless-stopped
 
   guide:
@@ -119,4 +130,5 @@ volumes:
   caddy-data:
   admin-data:
   drop-data:
+  cinema-data:
   guide-data:

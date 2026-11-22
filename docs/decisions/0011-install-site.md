@@ -1,6 +1,6 @@
 # 0011. A homepage and one-line installer in their own repo
 
-Date: 2026-11-21 · Status: accepted
+Date: 2026-11-21 · Status: accepted; hosting superseded by [0012](0012-site-own-server.md)
 
 ## Context
 

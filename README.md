@@ -42,7 +42,7 @@ profiles and design docs. Each app lives in its own repo and plugs in as a conta
 | [airplanemode-darklight](https://github.com/jessewolcott/airplanemode-darklight) | *The Dark Light*, text adventures narrated by the on-board model |
 | [airplanemode-drop](https://github.com/jessewolcott/airplanemode-drop) | *Drop*: pass files and notes between every device on the hotspot, keep movies for the flight |
 | [airplanemode-guide](https://github.com/jessewolcott/airplanemode-guide) | *Travel Guide*: all of Wikivoyage offline, plus "ask the guide" with the on-board model |
-| [airplanemode-site](https://github.com/jessewolcott/airplanemode-site) | the homepage and one-line installer: [jessewolcott.com/airplanemode-site](https://jessewolcott.com/airplanemode-site/) |
+| [airplanemode-site](https://github.com/jessewolcott/airplanemode-site) | the homepage and one-line installer (not hosted yet) |
 
 More app ideas (offline maps, a translator, a cinema, a trip kit…) are in
 [docs/app-ideas.md](docs/app-ideas.md).
@@ -155,16 +155,18 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
 
 ## Set it up
 
-**The easy way:** follow the guide at
-**[jessewolcott.com/airplanemode-site](https://jessewolcott.com/airplanemode-site/#setup)**.
-It walks through flashing and the first login, and builds your install command. The
-command runs one script on the router that does steps 5 and 6 below for you, checks the
-router first, and prints the admin password at the end:
+**The easy way:** after flashing and the first login (see
+[docs/hardware.md](docs/hardware.md) and FriendlyElec's wiki), run the installer from
+[airplanemode-site](https://github.com/jessewolcott/airplanemode-site) on the router as
+root. It does steps 5 and 6 below for you, checks the router first, and prints the admin
+password at the end:
 
 ```sh
 command -v curl >/dev/null || { opkg update && opkg install curl || apk add -U curl; } >/dev/null 2>&1
-curl -fsSL https://jessewolcott.com/airplanemode-site/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/jessewolcott/airplanemode-site/main/install.sh | sh
 ```
+
+A homepage with a step-by-step guide and a command builder is coming, on its own server.
 
 **By hand:**
 

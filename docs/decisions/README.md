@@ -17,3 +17,4 @@ rewriting history.
 | [0009](0009-connectivity-supervisor.md) | Staying connected: auto-join, Ethernet first, rebind off, offline popup |
 | [0010](0010-home-vpn-devices-data-use.md) | Home VPN (WireGuard), connected devices with pause, data use per network |
 | [0011](0011-install-site.md) | A homepage and one-line installer in their own repo (`airplanemode-site`) |
+| [0012](0012-site-own-server.md) | The homepage goes on its own server (not yet set up), not GitHub Pages |

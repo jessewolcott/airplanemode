@@ -5,7 +5,7 @@ This repo is the **platform**: landing page, admin service (Wi-Fi control + conn
 supervisor), Caddy front door, shared llama.cpp model, hardware profiles, docs. Apps live in
 their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airplanemode-guide`)
 and plug in as pinned container images. The public homepage + one-line installer is
-`../airplanemode-site` (GitHub Pages; decision 0011).
+`../airplanemode-site` (not hosted yet; decisions 0011, 0012).
 Start with `README.md`, then `docs/decisions/` (0001–0011). They explain *why* things are
 the way they are.
 

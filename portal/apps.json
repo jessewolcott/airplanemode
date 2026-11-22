@@ -2,7 +2,7 @@
   {
     "id": "darklight",
     "name": "The Dark Light",
-    "description": "A storm, a dark lighthouse, a ship heading for the rocks. A text adventure with seven endings, narrated by the on-board model.",
+    "description": "Text adventures narrated by the on-board model, alone or as a party from everyone's phones: a dark lighthouse, a frozen mountain pass and a fog-bound marsh.",
     "path": "/darklight/",
     "monogram": "DL",
     "color": "#f2b34b",
@@ -79,5 +79,49 @@
     "category": "Travel",
     "uses_llm": true,
     "icon": "/icons/guide.svg"
+  },
+  {
+    "id": "gatechange",
+    "name": "Gate Change",
+    "description": "A fast colour-and-number card game for 2 to 8 players. Play friends on the hotspot from every phone, or bots.",
+    "path": "/gatechange/",
+    "monogram": "GC",
+    "color": "#ff7a59",
+    "category": "Games",
+    "uses_llm": false,
+    "icon": "/icons/gatechange.svg"
+  },
+  {
+    "id": "passport",
+    "name": "Passport",
+    "description": "A travel deck-building card game. Collect stamps and visas against friends on the hotspot, or bots.",
+    "path": "/passport/",
+    "monogram": "Pp",
+    "color": "#c9a24b",
+    "category": "Games",
+    "uses_llm": false,
+    "icon": "/icons/passport.svg"
+  },
+  {
+    "id": "wayfarer",
+    "name": "Wayfarer",
+    "description": "Travel trivia from the Travel Guide: capitals, currencies, airport codes, phrases. Daily flight, endless mode, high scores.",
+    "path": "/wayfarer/",
+    "monogram": "Wf",
+    "color": "#4fa3e0",
+    "category": "Games",
+    "uses_llm": false,
+    "icon": "/icons/wayfarer.svg"
+  },
+  {
+    "id": "couch",
+    "name": "The Couch",
+    "description": "A therapist simulator: talk things over with a Stoic or a Socialist, played by the on-board model. Not real therapy.",
+    "path": "/couch/",
+    "monogram": "Co",
+    "color": "#b98fd6",
+    "category": "Entertainment",
+    "uses_llm": true,
+    "icon": "/icons/couch.svg"
   }
 ]

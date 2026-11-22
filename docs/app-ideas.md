@@ -17,6 +17,10 @@ offline at runtime, usable without the model, small in memory.
 | [Cinema](https://github.com/jessewolcott/airplanemode-cinema) | Plays the films, shows and music on Drop, shelved by folder, resuming per device | no |
 | [QuickShot](https://github.com/jessewolcott/airplanemode-quickshot) | An endless swipe feed of the clips in Drop's QuickShot folder, with shared likes and comments | no |
 | [Doom](https://github.com/jessewolcott/airplanemode-doom) | PrBoom+ in the browser with touch controls: Freedoom, the Layover airport episode, your own WADs from Drop | no |
+| [Gate Change](https://github.com/jessewolcott/airplanemode-gatechange) | Colour-and-number card game for 2–8: tables on the hotspot, bots for empty seats | no |
+| [Passport](https://github.com/jessewolcott/airplanemode-passport) | Travel deck-building card game for 2–4: tables on the hotspot, bots for empty seats | no |
+| [Wayfarer](https://github.com/jessewolcott/airplanemode-wayfarer) | Solo travel trivia from a question bank built from the Travel Guide's Wikivoyage | no |
+| [The Couch](https://github.com/jessewolcott/airplanemode-couch) | Therapist simulator: a Stoic or a Socialist, voiced by the model, with an offline fallback | optional |
 
 ## Next up
 
@@ -25,7 +29,7 @@ offline at runtime, usable without the model, small in memory.
 | **Offline maps** | Pan and search a map of the trip's region; pin the hotel, share pins with the group | Maps are the first thing that breaks without data. Protomaps `.pmtiles` extracts (one file per region) plus MapLibre, all served locally | no | medium | 50 MB–2 GB per region |
 | **Phrasebook & translator** | Translate typed text between common languages, plus a phrasebook per country | Real offline translation models (Bergamot / Argos, ~20–40 MB per language pair) run fine on the R6S's CPU. The shared model is too small to translate well, so it would only suggest phrases | optional | medium | ~30 MB per language pair |
 | **Trip kit** | Shared itinerary, packing list and expense splitter ("who owes whom") for the group on the hotspot | Every group trip needs it, and it's all small local data | optional (parse "Dinner 84 EUR, split 4") | medium | tiny |
-| **Party quiz** | Phones as buzzers, the TV or a laptop as the board; the model writes questions about the destination from the Travel Guide | Local multiplayer works perfectly on one hotspot; uses the model where it's good (playful text), with a fixed question bank as the fallback | optional | medium | small |
+| **Party quiz** | Phones as buzzers, the TV or a laptop as the board. Wayfarer's question bank and round/scoring code are a ready start (it's solo today); the model could add questions about the destination | Local multiplayer works perfectly on one hotspot; uses the model where it's good (playful text), with a fixed question bank as the fallback | optional | medium | small |
 | **Library** | Books from Project Gutenberg, plus Wikipedia subsets (medicine, history) | The Travel Guide already reads any Kiwix ZIM; this is mostly picking files and a reader view | no | small | 100 MB–10 GB |
 
 ## Later, or with care

@@ -11,6 +11,10 @@
 		{ "name": "airplanemode-cinema", "path": "../airplanemode-cinema" },
 		{ "name": "airplanemode-quickshot", "path": "../airplanemode-quickshot" },
 		{ "name": "airplanemode-doom", "path": "../airplanemode-doom" },
+		{ "name": "airplanemode-gatechange", "path": "../airplanemode-gatechange" },
+		{ "name": "airplanemode-passport", "path": "../airplanemode-passport" },
+		{ "name": "airplanemode-wayfarer", "path": "../airplanemode-wayfarer" },
+		{ "name": "airplanemode-couch", "path": "../airplanemode-couch" },
 		{ "name": "airplanemode-site", "path": "../airplanemode-site" }
 	],
 	"settings": {

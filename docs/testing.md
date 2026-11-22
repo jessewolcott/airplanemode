@@ -129,5 +129,13 @@ Things only real hardware can prove. Tick them off here as they're verified.
       touch controls feel right (move, turn, fire, use, menus, saving), sound and music play
       after the first tap, and a save survives closing the tab. Note the frame rate on a
       mid-range phone at "Balanced". A `.wad` uploaded to Drop shows **Play in Doom**.
+- [ ] **Gate Change and Passport:** three phones at one table plus a bot. Moves show up on the
+      other phones within a second or two, a locked phone rejoins its seat, and a phone that leaves is
+      played by a bot until it comes back. Card fan and market are comfortable to use by touch.
+- [ ] **Wayfarer:** a round on a phone, the daily flight matches on two phones, and a score
+      survives `docker compose restart wayfarer`. *Read it in the Travel Guide* opens the article.
+- [ ] **The Couch:** replies stream with the R6S model (note seconds to first word), the
+      offline mind takes over while the guide's "ask" keeps the model busy, and a crisis
+      message shows the resources card.
 - [ ] The model's speed on the R6S (tokens/s). Update decision 0003 with the number.
 - [ ] Temperature and power draw with both adapters and the model busy.

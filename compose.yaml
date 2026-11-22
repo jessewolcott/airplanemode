@@ -140,6 +140,37 @@ services:
     mem_limit: ${GUIDE_MEM:-256m}
     restart: unless-stopped
 
+  # Gate Change: colour-and-number card game, rooms on the hotspot + bots. In memory only.
+  gatechange:
+    image: ghcr.io/jessewolcott/airplanemode-gatechange:0.1.0
+    mem_limit: ${GATECHANGE_MEM:-64m}
+    restart: unless-stopped
+
+  # Passport: travel deck-builder, rooms on the hotspot + bots. In memory only.
+  passport:
+    image: ghcr.io/jessewolcott/airplanemode-passport:0.1.0
+    mem_limit: ${PASSPORT_MEM:-64m}
+    restart: unless-stopped
+
+  # Wayfarer: travel trivia. Questions ship in the image (made from Wikivoyage); high scores in its volume.
+  wayfarer:
+    image: ghcr.io/jessewolcott/airplanemode-wayfarer:0.1.0
+    environment:
+      DATA_DIR: /data
+      TZ: ${TZ:-UTC}                # the daily flight changes at local midnight
+    volumes:
+      - wayfarer-data:/data         # scores.json
+    mem_limit: ${WAYFARER_MEM:-64m}
+    restart: unless-stopped
+
+  # The Couch: therapist simulator. Conversations stay in the browser; nothing is stored on the box.
+  couch:
+    image: ghcr.io/jessewolcott/airplanemode-couch:0.1.0
+    environment:
+      LLM_URL: ${LLM_URL-http://llm:8080}
+    mem_limit: ${COUCH_MEM:-64m}
+    restart: unless-stopped
+
 networks:
   default:
     name: airplanemode
@@ -152,3 +183,4 @@ volumes:
   cinema-data:
   quickshot-data:
   guide-data:
+  wayfarer-data:

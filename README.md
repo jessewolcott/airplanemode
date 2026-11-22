@@ -45,9 +45,13 @@ profiles and design docs. Each app lives in its own repo and plugs in as a conta
 | [airplanemode-cinema](https://github.com/jessewolcott/airplanemode-cinema) | *Cinema*: plays the films, shows and music on Drop, shelved by folder, each device resuming where it left off |
 | [airplanemode-quickshot](https://github.com/jessewolcott/airplanemode-quickshot) | *QuickShot*: an endless swipe feed of the clips in Drop's QuickShot folder, with likes and comments shared on the hotspot |
 | [airplanemode-doom](https://github.com/jessewolcott/airplanemode-doom) | *Doom*: PrBoom+ running in the browser with touch controls; Freedoom, the *Layover* airport episode, and your own WADs from Drop |
+| [airplanemode-gatechange](https://github.com/jessewolcott/airplanemode-gatechange) | *Gate Change*: a colour-and-number card game for 2–8, with friends on the hotspot or bots |
+| [airplanemode-passport](https://github.com/jessewolcott/airplanemode-passport) | *Passport*: a travel deck-building card game for 2–4, with friends on the hotspot or bots |
+| [airplanemode-wayfarer](https://github.com/jessewolcott/airplanemode-wayfarer) | *Wayfarer*: travel trivia generated from Wikivoyage, with a daily round and high scores |
+| [airplanemode-couch](https://github.com/jessewolcott/airplanemode-couch) | *The Couch*: a therapist simulator (Stoic or Socialist) voiced by the on-board model |
 | [airplanemode-site](https://github.com/jessewolcott/airplanemode-site) | the homepage and one-line installer (not hosted yet) |
 
-More app ideas (offline maps, a translator, a cinema, a trip kit…) are in
+More app ideas (offline maps, a translator, a trip kit, a party quiz…) are in
 [docs/app-ideas.md](docs/app-ideas.md).
 
 ## How it works
@@ -63,7 +67,7 @@ flowchart LR
             caddy["Caddy :8080<br/>landing page"]
             admin["admin<br/>status + Wi-Fi settings"]
             llm["llm<br/>Qwen2.5-1.5B"]
-            apps["apps<br/>/darklight/ /drop/ /guide/"]
+            apps["apps<br/>/drop/ /guide/ /gatechange/ …"]
         end
     end
     devices["Your phones, laptops, tablets"]
@@ -232,7 +236,10 @@ networks and a fake hotel sign-in page, so you can try the whole flow without ha
 
 ```sh
 git clone https://github.com/jessewolcott/airplanemode.git
-git clone https://github.com/jessewolcott/airplanemode-darklight.git
+# the dev stack builds every app from a checkout next to this one
+for app in darklight drop guide cinema quickshot doom gatechange passport wayfarer couch; do
+  git clone https://github.com/jessewolcott/airplanemode-$app.git
+done
 cd airplanemode
 cp hardware/nanopi-r6s.env .env
 docker compose -f compose.yaml -f compose.dev.yaml up -d --build

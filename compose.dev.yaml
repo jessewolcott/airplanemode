@@ -41,3 +41,19 @@ services:
   guide:
     image: airplanemode-guide:dev
     build: ../airplanemode-guide
+
+  gatechange:
+    image: airplanemode-gatechange:dev
+    build: ../airplanemode-gatechange
+
+  passport:
+    image: airplanemode-passport:dev
+    build: ../airplanemode-passport
+
+  wayfarer:
+    image: airplanemode-wayfarer:dev
+    build: ../airplanemode-wayfarer
+
+  couch:
+    image: airplanemode-couch:dev
+    build: ../airplanemode-couch

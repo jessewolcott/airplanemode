@@ -51,6 +51,26 @@
 		reverse_proxy guide:8000
 	}
 
+	redir /gatechange /gatechange/
+	handle_path /gatechange/* {
+		reverse_proxy gatechange:8000
+	}
+
+	redir /passport /passport/
+	handle_path /passport/* {
+		reverse_proxy passport:8000
+	}
+
+	redir /wayfarer /wayfarer/
+	handle_path /wayfarer/* {
+		reverse_proxy wayfarer:8000
+	}
+
+	redir /couch /couch/
+	handle_path /couch/* {
+		reverse_proxy couch:8000
+	}
+
 	# ---- platform: status API and admin panel (reserved paths: no app may use /api or /admin) ----
 	redir /admin /admin/
 	handle /api/* {

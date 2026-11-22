@@ -37,7 +37,7 @@ offline at runtime, usable without the model, small in memory.
 | App | What it does | Watch out for |
 |---|---|---|
 | **Photo backup** | Phones back up the day's photos to the box over the hotspot | Storage and flash wear; needs a clear "copy them off when home" story |
-| **Ask anything** | A plain chat with the on-board model | Easy to build, but a 1.5B model is confidently wrong; the Travel Guide's grounded answers are the better pattern |
+| **Ask anything** | A plain chat with the on-board model | Easy to build, but a 2B model is confidently wrong; the Travel Guide's grounded answers are the better pattern |
 | **Group chat / walkie-talkie** | Messages and push-to-talk between phones on the hotspot | Only useful when the group is in range of one box, e.g. a campsite or a ship cabin |
 | **Currency & time zones** | Converter with rates saved while online, world clock, jet-lag planner | Rates go stale; show their date clearly |
 | **News & podcasts to go** | Fetch chosen feeds while online, read and listen offline | Needs the "while online" sync step, like `scripts/update.sh` |

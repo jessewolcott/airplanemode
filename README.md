@@ -192,7 +192,7 @@ command builder for the options.
 3. **Set a root password** in LuCI (System → Administration), if you haven't already. It
    stays yours: AirplaneMode gets its own, more limited login in step 5.
 4. **Get the box online once,** by Ethernet or by joining a Wi-Fi network in LuCI. Setup
-   downloads about 1.8 GB of images, model and Wikivoyage files.
+   downloads about 3.8 GB of images, model and Wikivoyage files.
 5. **Install AirplaneMode** from the router's shell (SSH in as root):
 
    ```sh

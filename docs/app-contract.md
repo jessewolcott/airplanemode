@@ -100,7 +100,7 @@ is offered as is. Doom, for example, declares `"types": ["application/x-doom-wad
 ## Adding the app to the box (in this repo)
 
 - `compose.yaml`: a service named `<id>` with the pinned image, `LLM_URL: ${LLM_URL-http://llm:8080}`
-  if it uses the model, and `mem_limit: ${<ID>_MEM:-256m}`.
+  and `profiles: ["llm"]` if it uses the model, and `mem_limit: ${<ID>_MEM:-256m}`.
 - `Caddyfile`: `redir /<id> /<id>/` and a `handle_path /<id>/*` block.
 - `portal/apps.json`: name, description, path, `uses_llm`.
-- Memory settings for the new app in each `hardware/*.env`.
+- Memory settings for the new app in each `hardware/*.env` that runs it.

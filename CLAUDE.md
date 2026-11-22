@@ -145,7 +145,7 @@ Done and pushed (CI green):
   desktop browser, not on real phones yet. Released: Doom 0.1.0, Drop 0.2.1 (Play in Doom).
 - Gate Change, Passport, Wayfarer and The Couch (decision 0016): two card games with hotspot
   rooms (long-poll) and bots, trivia pre-built from the guide's ZIM, a therapist simulator
-  (Stoic/Socialist schools as data files, fixed safety check). Played in the dev stack at
+  (therapists as data files, fixed safety check). Played in the dev stack at
   phone size, not on real phones. Released: all four 0.1.0; The Couch 0.2.0 (six therapists:
   Empath, Pragmatist, Stoic, Ho Chi Minh's ethics, playful Nihilist and Narcissist). The homepage lists all ten apps
   (cards generated from `portal/apps.json`).

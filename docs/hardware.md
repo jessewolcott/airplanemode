@@ -50,6 +50,11 @@ from the container. If the admin panel says it can't reach the router's API (*un
   for its data (*untested: confirm package names and storage setup on the actual firmware*).
 - The admin panel is on port 80, so AirplaneMode uses **8080** on `LAN_IP=192.168.8.1`.
 - No model on this profile. Apps run in their plain mode.
+- **Memory.** The limits in `hardware/glinet.env` add up to about 950 MB, but they are ceilings,
+  not use: on the dev stack the proxy, admin and all ten apps use about 420 MB together when
+  idle (the Travel Guide ~80 MB, the rest 20–40 MB each). Switching an app off in the admin
+  panel only hides it from the menu; it keeps running. *Untested: measure on a real 1 GB
+  GL.iNet with a few people playing before relying on it.*
 - **Repeater caveat.** GL.iNet's firmware has its own repeater manager, which also edits the
   upstream Wi-Fi settings. Using both it and AirplaneMode's *Internet source* panel can make
   them fight. On GL.iNet, pick one: either use GL.iNet's own repeater page for the upstream

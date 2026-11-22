@@ -51,6 +51,24 @@ box is three small edits in this repo and nothing else.
   R6S). Keep prompts short, set `max_tokens` tight, send `cache_prompt: true`, and never
   call it in a loop the user is waiting on without a fallback.
 - Validate what comes back. Small models are confidently wrong; the app owns the truth.
+- For chat-style replies, stream (`stream: true`) and pass the tokens on to the page as
+  server-sent events, so people see words arrive instead of waiting tens of seconds. Caddy
+  passes SSE through with no config. The Couch does this, with a fallback if the first token
+  doesn't arrive in time.
+
+## Optional: playing together on the hotspot
+
+Everyone on the hotspot can reach the same app, so multiplayer needs no accounts or internet.
+The pattern Gate Change and Passport use (decision 0016), and Darklight's party mode before them:
+
+- **Rooms in memory** with a short join code, listed on the app's home screen while open,
+  capped in number and forgotten after an idle timeout. No volume.
+- **A random seat token** kept in the browser (`localStorage`), so a refresh or a locked phone
+  rejoins the same seat.
+- **Long-polling** for updates: `GET state?since=<version>` answers at once if something
+  changed, otherwise waits about 20 s. It works through Caddy as is. No WebSockets.
+- **The server enforces the rules** and renders the state for each player, so hidden
+  information (other hands) never reaches a phone. Bots run on the server.
 
 ## Optional: opening another app's files
 

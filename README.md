@@ -12,8 +12,9 @@ private hotspot for your devices that:
   without anyone touching it. Plug in a room's Ethernet cable and that's used first.
 - **broadcasts your own Wi-Fi network,** with the same name and password everywhere you go,
   so your devices connect automatically in every new place.
-- **runs apps locally,** games and tools that work with no internet at all, including a small
-  language model built into the box.
+- **runs apps locally** that work with no internet at all: card games you play together across
+  the hotspot (or against bots), travel trivia, text adventures, films and music, file sharing,
+  an offline Wikivoyage, and a small language model built into the box.
 - **sends everything through your home VPN** (WireGuard) if you want, so the hotel's
   network only sees encrypted traffic.
 - **shows who's connected and how much data you've used,** and lets you pause one device's
@@ -29,6 +30,8 @@ private hotspot for your devices that:
 <p align="center">
   <img src="docs/screenshots/guide-ask.png" width="230" alt="Travel Guide answering a question from Wikivoyage">
   <img src="docs/screenshots/drop.png" width="230" alt="Drop: files and notes shared between devices">
+  <img src="docs/screenshots/gatechange-table.png" width="230" alt="Gate Change: a card game against bots or friends on the hotspot">
+  <img src="docs/screenshots/couch-chat.png" width="230" alt="The Couch: a therapist simulator voiced by the on-board model">
 </p>
 
 <sub>Screenshots from the laptop dev stack (mock router); real hardware not tested yet.</sub>
@@ -151,6 +154,8 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
 |---|---|
 | Landing page, app menu, sign-in flow, admin panel | tested end to end in the browser against the mock router |
 | Apps on the menu (admin switch), Drop folders + "downloads off", Cinema from Drop | automated tests; checked end to end in the browser on the dev stack |
+| Card games (Gate Change, Passport): rules, bots, tables shared over the hotspot | each app's tests (hundreds of bot games, rooms through the API); played at phone size on the dev stack, two players checked through the proxy |
+| Wayfarer, The Couch (with the 1.5B model, and its safety check) | each app's tests; played at phone size on the dev stack. Not yet on real phones |
 | Admin API (auth, validation, lockout guard, captive flow) | automated tests, run in CI |
 | Router control (join, MAC clone, firewall, hotspots) | tested against a real OpenWrt 24.10 API in Docker (`admin/tests/test_openwrt_live.py`) |
 | Limited router login (`scripts/router-setup.sh`) | tested on real OpenWrt 24.10: every admin feature works, and 8 out-of-scope calls are refused |
@@ -277,9 +282,14 @@ docs/decisions/       why things are the way they are
 ## Adding an app
 
 1. Create `airplanemode-<name>` following [docs/app-contract.md](docs/app-contract.md).
-2. Tag a release so its CI publishes the arm64 image, and make the package public on GitHub.
+2. Tag a release so its CI publishes the arm64 image, and check the package is public on
+   GitHub (anonymous pulls must work; the box doesn't log in to ghcr.io).
 3. Here: add the service to `compose.yaml`, a route to `Caddyfile`, and an entry to
-   `portal/apps.json`. The `check` workflow fails if any of the three is missing.
+   `portal/apps.json` (plus its icon in `portal/icons/`). The `check` workflow fails if
+   any of the three is missing, or if the pinned image has no arm64 build. Also add
+   `<ID>_MEM` to each `hardware/*.env`, a dev build to `compose.dev.yaml`, the repo to
+   `airplanemode.code-workspace` and the tables in this README, and a decision record.
+4. On the homepage (`airplanemode-site`): an app card with the same name, description and icon.
 
 ## Security notes
 

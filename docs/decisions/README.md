@@ -18,3 +18,4 @@ rewriting history.
 | [0010](0010-home-vpn-devices-data-use.md) | Home VPN (WireGuard), connected devices with pause, data use per network |
 | [0011](0011-install-site.md) | A homepage and one-line installer in their own repo (`airplanemode-site`) |
 | [0012](0012-site-own-server.md) | The homepage goes on its own server (not yet set up), not GitHub Pages |
+| [0013](0013-cinema-drop-folders-app-switches.md) | Cinema, Drop folders and "downloads off" (admin), app switches on the menu |

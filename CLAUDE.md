@@ -3,17 +3,18 @@
 Self-hosted, offline-first apps for a travel router (NanoPi R6S main target, GL.iNet lite).
 This repo is the **platform**: landing page, admin service (Wi-Fi control + connectivity
 supervisor), Caddy front door, shared llama.cpp model, hardware profiles, docs. Apps live in
-their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airplanemode-guide`)
-and plug in as pinned container images. The public homepage + one-line installer is
+their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airplanemode-guide`,
+`../airplanemode-cinema`) and plug in as pinned container images. The public homepage +
+one-line installer is
 `../airplanemode-site` (not hosted yet; decisions 0011, 0012).
-Start with `README.md`, then `docs/decisions/` (0001–0011). They explain *why* things are
+Start with `README.md`, then `docs/decisions/` (0001–0013). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
 
 - All of this project's repos live side by side in **`H:\Github\airplanemode\`**: `airplanemode`
   (this platform repo), `airplanemode-darklight`, `airplanemode-drop`, `airplanemode-guide`,
-  `airplanemode-site`.
+  `airplanemode-cinema`, `airplanemode-site`.
   New app repos go there too. H: is **exFAT**, so git needs
   `git config --global --add safe.directory H:/Github/airplanemode/<repo>` for each new repo.
 - Moving folders on H: while VS Code has them open can half-fail: Windows moves some files
@@ -81,6 +82,11 @@ VS Code tasks (`.vscode/tasks.json`) wrap all of the above.
 - The installer in `../airplanemode-site/install.sh` wraps `scripts/router-setup.sh` and
   `scripts/update.sh`. Changing their env flags, a new `hardware/*.env`, or the install path
   means updating the installer and its page too.
+- The admin service reads `portal/apps.json` (bind-mounted at `/config/apps.json`: restart
+  admin after editing it) and hides apps listed in `hidden_apps` (its settings file).
+  `GET /api/apps` is the menu; Drop's "Play in ..." uses it too (`opens` field). Apps learn
+  whether the user is the admin via `GET /api/admin/session` with the forwarded `am_admin`
+  cookie (decision 0013).
 - Validate input before saving (SSID ≤ 32 bytes, WPA key 8–63 printable or 64 hex, unicast MAC).
 
 ## Gotchas already learned
@@ -122,6 +128,10 @@ Done and pushed (CI green):
 - apps Drop (`../airplanemode-drop`) and Travel Guide (`../airplanemode-guide`), both 0.1.0;
   project icon (`portal/icon.svg`), screenshots in `docs/screenshots/` (retake from the dev
   stack when the UI changes), app ideas in `docs/app-ideas.md`.
+- homepage + one-line installer (`../airplanemode-site`, not hosted yet; decisions 0011, 0012).
+- Cinema app (`../airplanemode-cinema`), Drop folders + admin "downloads off", app switches in
+  the admin panel (decision 0013). **Drop 0.2.0 and Cinema 0.1.0 still need release tags**;
+  until then the platform wiring lives on branch `cinema` (CI checks pinned images exist).
 
 **No real hardware has been tested yet.** The R6S and adapters aren't bought. Parts:
 - NanoPi R6S 8 GB with the metal case,

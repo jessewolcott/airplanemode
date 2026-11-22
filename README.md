@@ -18,8 +18,8 @@ private hotspot for your devices that:
   network only sees encrypted traffic.
 - **shows who's connected and how much data you've used,** and lets you pause one device's
   internet (a tablet streaming all night on a capped plane Wi-Fi).
-- **has a simple admin panel** for picking the network to join, the VPN, devices and your
-  hotspots, from any phone.
+- **has a simple admin panel** for picking the network to join, the VPN, devices, your
+  hotspots and which apps are on the menu, from any phone.
 
 <p align="center">
   <img src="docs/screenshots/landing-online.png" width="230" alt="Landing page: online through the home VPN, with the app menu">
@@ -42,6 +42,7 @@ profiles and design docs. Each app lives in its own repo and plugs in as a conta
 | [airplanemode-darklight](https://github.com/jessewolcott/airplanemode-darklight) | *The Dark Light*, text adventures narrated by the on-board model |
 | [airplanemode-drop](https://github.com/jessewolcott/airplanemode-drop) | *Drop*: pass files and notes between every device on the hotspot, keep movies for the flight |
 | [airplanemode-guide](https://github.com/jessewolcott/airplanemode-guide) | *Travel Guide*: all of Wikivoyage offline, plus "ask the guide" with the on-board model |
+| [airplanemode-cinema](https://github.com/jessewolcott/airplanemode-cinema) | *Cinema*: plays the films, shows and music on Drop, shelved by folder, each device resuming where it left off |
 | [airplanemode-site](https://github.com/jessewolcott/airplanemode-site) | the homepage and one-line installer (not hosted yet) |
 
 More app ideas (offline maps, a translator, a cinema, a trip kit…) are in
@@ -143,6 +144,7 @@ run in their plain mode, without the model. *Not yet tested on real GL.iNet hard
 | Piece | Status |
 |---|---|
 | Landing page, app menu, sign-in flow, admin panel | tested end to end in the browser against the mock router |
+| Apps on the menu (admin switch), Drop folders + "downloads off", Cinema from Drop | automated tests; checked end to end in the browser on the dev stack |
 | Admin API (auth, validation, lockout guard, captive flow) | automated tests, run in CI |
 | Router control (join, MAC clone, firewall, hotspots) | tested against a real OpenWrt 24.10 API in Docker (`admin/tests/test_openwrt_live.py`) |
 | Limited router login (`scripts/router-setup.sh`) | tested on real OpenWrt 24.10: every admin feature works, and 8 out-of-scope calls are refused |

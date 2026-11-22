@@ -52,6 +52,29 @@ box is three small edits in this repo and nothing else.
   call it in a loop the user is waiting on without a fallback.
 - Validate what comes back. Small models are confidently wrong; the app owns the truth.
 
+## Optional: opening another app's files
+
+An app can offer to open files from another app. Today that's Drop: its items get a
+**Play in ...** button for apps that declare it. Add `opens` to the app's entry in
+`portal/apps.json` (and mirror it in the app's `app.yaml`):
+
+```json
+"opens": {"from": "drop", "types": ["video/*", "audio/*"], "url": "/cinema/#play={id}"}
+```
+
+`{id}` is replaced with the item's id. The offering app reads the list from `GET /api/apps`.
+
+## What the platform gives apps
+
+- `GET /api/apps`: the installed apps the admin hasn't switched off (the landing page's menu).
+  The admin can hide any app from the admin panel; a hidden app keeps running at its address,
+  but isn't on the menu and isn't offered by other apps.
+- `GET /api/admin/session`: 200 if the `am_admin` cookie it's sent is a live admin session,
+  401 otherwise. Apps are served from the same address as the admin panel, so the browser
+  sends them that cookie. To know whether the person using the app is the admin, call this
+  from the app's backend (`http://admin:8000`), passing on only that cookie (check its format
+  first), and cache the answer briefly. Drop does this.
+
 ## Adding the app to the box (in this repo)
 
 - `compose.yaml`: a service named `<id>` with the pinned image, `LLM_URL: ${LLM_URL-http://llm:8080}`

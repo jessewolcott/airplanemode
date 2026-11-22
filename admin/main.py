@@ -411,6 +411,62 @@ async def logout(response: Response, token: str = Depends(require_admin)):
     return {"ok": True}
 
 
+@app.get("/api/admin/session")
+async def session(_token: str = Depends(require_admin)):
+    """200 if the caller's cookie is a live admin session. Apps (Drop) ask this, passing the
+    cookie the browser sent them, to know whether the person using them is the admin."""
+    return {"ok": True}
+
+
+# ---------------- apps on the landing page ----------------
+# The installed apps are listed in portal/apps.json (mounted read-only). The admin can hide an
+# app from the menu; hidden ids are kept with the other settings. Hidden means "not on the menu
+# and not offered by other apps" (Drop's "Play in..."); the app's own address still works.
+APPS_FILE = Path(os.getenv("APPS_FILE", "/config/apps.json"))
+
+
+def installed_apps():
+    try:
+        apps = json.loads(APPS_FILE.read_text(encoding="utf-8"))
+        return [a for a in apps if isinstance(a, dict) and isinstance(a.get("id"), str)]
+    except FileNotFoundError:
+        return []
+    except Exception as e:
+        log.warning("could not read %s: %s", APPS_FILE, e)
+        return []
+
+
+def hidden_apps():
+    return set(store.data.get("hidden_apps", []))
+
+
+@app.get("/api/apps")
+async def apps_on_menu():
+    hidden = hidden_apps()
+    return [a for a in installed_apps() if a["id"] not in hidden]
+
+
+@app.get("/api/admin/apps")
+async def apps_admin(_token: str = Depends(require_admin)):
+    hidden = hidden_apps()
+    return {"apps": [{**a, "enabled": a["id"] not in hidden} for a in installed_apps()]}
+
+
+class AppSwitch(BaseModel):
+    enabled: bool
+
+
+@app.put("/api/admin/apps/{app_id}")
+async def app_switch(app_id: str, body: AppSwitch, _token: str = Depends(require_admin)):
+    if app_id not in {a["id"] for a in installed_apps()}:
+        raise HTTPException(404, "No such app.")
+    hidden = hidden_apps()
+    hidden.discard(app_id) if body.enabled else hidden.add(app_id)
+    store.data["hidden_apps"] = sorted(hidden)
+    store.save()
+    return {"ok": True, "enabled": body.enabled}
+
+
 # ---------------- admin: Wi-Fi ----------------
 class Scan(BaseModel):
     radio: str

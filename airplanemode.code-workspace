@@ -8,6 +8,7 @@
 		{ "name": "airplanemode-darklight", "path": "../airplanemode-darklight" },
 		{ "name": "airplanemode-drop", "path": "../airplanemode-drop" },
 		{ "name": "airplanemode-guide", "path": "../airplanemode-guide" },
+		{ "name": "airplanemode-cinema", "path": "../airplanemode-cinema" },
 		{ "name": "airplanemode-site", "path": "../airplanemode-site" }
 	],
 	"settings": {

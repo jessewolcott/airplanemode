@@ -375,6 +375,30 @@ def test_data_use():
     assert ok(c.get("/api/admin/usage"))["networks"] == []
 
 
+def test_apps_on_the_menu():
+    apps = Path(main.DATA_DIR) / "apps-catalog.json"
+    apps.write_text('[{"id": "drop", "name": "Drop", "path": "/drop/"}, {"id": "cinema", "name": "Cinema", "path": "/cinema/"}]')
+    main.APPS_FILE = apps
+    assert [a["id"] for a in ok(c.get("/api/apps"))] == ["drop", "cinema"]
+    assert c.put("/api/admin/apps/cinema", json={"enabled": False}).status_code == 403   # no header
+    ok(c.put("/api/admin/apps/cinema", json={"enabled": False}, headers=H))
+    assert [a["id"] for a in ok(c.get("/api/apps"))] == ["drop"]                         # public list
+    assert {a["id"]: a["enabled"] for a in ok(c.get("/api/admin/apps"))["apps"]} == {"drop": True, "cinema": False}
+    assert c.put("/api/admin/apps/nope", json={"enabled": False}, headers=H).status_code == 404
+    ok(c.put("/api/admin/apps/cinema", json={"enabled": True}, headers=H))
+    assert len(ok(c.get("/api/apps"))) == 2
+    # signed out: can't switch apps, and the session check (used by Drop) says no
+    assert ok(c.get("/api/admin/session")) == {"ok": True}
+    cookie = c.cookies.get(main.COOKIE)
+    c.cookies.clear()
+    assert c.put("/api/admin/apps/drop", json={"enabled": False}, headers=H).status_code == 401
+    assert c.get("/api/admin/session").status_code == 401
+    assert c.get("/api/admin/session", headers={"Cookie": f"{main.COOKIE}={cookie}"}).status_code == 200
+    c.cookies.set(main.COOKIE, cookie)
+    main.APPS_FILE = Path("/nonexistent/apps.json")
+    assert ok(c.get("/api/apps")) == []                                                   # missing file: empty, not an error
+
+
 def test_logout():
     ok(c.post("/api/admin/logout", headers=H))
     assert c.get("/api/admin/wifi").status_code == 401

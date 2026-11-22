@@ -68,7 +68,11 @@
   .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--ink); cursor: pointer; margin: 0; }
   .toggle input { width: auto; accent-color: var(--accent); }
   details summary { cursor: pointer; color: var(--dim); font-size: .85rem; margin-top: 12px; }
-  .apps a { color: var(--ink); } .apps li { margin: 4px 0; } .apps li span { color: var(--dim); font-size: .85rem; }
+  .apps { list-style: none; padding: 0; margin: 0; }
+  .apps li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .apps li:first-child { border-top: 0; }
+  .apps a { color: var(--ink); font-weight: 600; } .apps li span.meta { color: var(--dim); font-size: .85rem; }
+  .apps li.off a { color: var(--dim); font-weight: 400; }
 
   ul.saved { list-style: none; padding: 0; margin: 6px 0 0; }
   ul.saved li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: .9rem; }
@@ -190,9 +194,10 @@
 
     <!-- apps -->
     <section class="card">
-      <h2>Installed apps</h2>
-      <p class="lead">Apps are installed by version in the platform repo's <code>compose.yaml</code>; run <code>scripts/update.sh</code> while online to change them.</p>
+      <h2>Apps on the menu</h2>
+      <p class="lead">Switch an app off to take it off the landing page (other apps stop offering it too). It stays installed; switch it back on any time. Apps are installed by version in the platform repo's <code>compose.yaml</code>; run <code>scripts/update.sh</code> while online to change them.</p>
       <ul class="apps" id="apps"></ul>
+      <div class="msg" id="appsMsg"></div>
     </section>
   </div>
 </main>
@@ -241,6 +246,7 @@ async function load() {
   if (state.upstream && !picked) fillJoin({ ssid: state.upstream.ssid, security: state.upstream.encryption }, state.upstream.macaddr);
   await refreshNet();
   loadExtras();
+  loadApps().catch(() => {});
 }
 
 async function refreshNet() {
@@ -437,9 +443,21 @@ $("#usageReset").addEventListener("click", e => busy(e.target, async () => {
 function loadExtras() { return Promise.all([loadVpn(), loadDevices(), loadUsage()].map(p => p.catch(() => {}))); }
 setInterval(() => { if (!$("#panel").classList.contains("hidden")) loadExtras(); }, 15000);
 
-fetch("/apps.json").then(r => r.json()).then(apps => {
-  $("#apps").innerHTML = apps.map(a => `<li><a href="${esc(a.path)}">${esc(a.name)}</a> <span>· ${esc(a.path)}${a.uses_llm ? " · uses the model" : ""}</span></li>`).join("") || "<li class='note'>No apps installed.</li>";
-}).catch(() => {});
+async function loadApps() {
+  const { apps } = await api("GET", "/api/admin/apps");
+  $("#apps").innerHTML = apps.map(a => `<li class="${a.enabled ? "" : "off"}">
+      <span><a href="${esc(a.path)}">${esc(a.name)}</a> <span class="meta">· ${esc(a.path)}${a.uses_llm ? " · uses the model" : ""}${a.enabled ? "" : " · hidden"}</span></span>
+      <label class="toggle"><input type="checkbox" data-app="${esc(a.id)}" ${a.enabled ? "checked" : ""}> On the menu</label>
+    </li>`).join("") || "<li class='note'>No apps installed.</li>";
+}
+$("#apps").addEventListener("change", async e => {
+  const box = e.target.closest("[data-app]"); if (!box) return;
+  box.disabled = true;
+  try { await api("PUT", `/api/admin/apps/${encodeURIComponent(box.dataset.app)}`, { enabled: box.checked }); msg($("#appsMsg"), "", true); }
+  catch (err) { box.checked = !box.checked; msg($("#appsMsg"), err.message, false); }
+  box.disabled = false;
+  loadApps().catch(() => {});
+});
 
 load().catch(() => showLogin());
 </script>

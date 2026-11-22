@@ -43,8 +43,10 @@ services:
       WAN_IFACE: ${WAN_IFACE:-wan}
       AUTOJOIN: ${AUTOJOIN:-1}
       OFFLINE_PORTAL: ${OFFLINE_PORTAL:-1}
+      APPS_FILE: /config/apps.json
     volumes:
-      - admin-data:/data            # saved networks
+      - admin-data:/data            # saved networks, apps hidden from the menu
+      - ./portal/apps.json:/config/apps.json:ro   # the installed apps (restart admin after editing)
     # Use the router's own DNS (dnsmasq). Docker can't reach a resolver on the host's
     # 127.0.0.1, so it would otherwise fall back to public DNS, which hotels block before
     # sign-in, and the captive-portal check would wrongly report "offline".

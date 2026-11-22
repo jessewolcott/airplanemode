@@ -97,7 +97,8 @@
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-fetch("/apps.json").then(r => r.json()).then(apps => {
+// The admin service leaves out apps the admin switched off; if it's down, show everything.
+fetch("/api/apps").then(r => r.ok ? r.json() : Promise.reject()).catch(() => fetch("/apps.json").then(r => r.json())).then(apps => {
   $("#apps").innerHTML = apps.length ? apps.map(a => `
     <a class="app" href="${esc(a.path)}">
       <span class="icon" style="background:${esc(a.color || "#8f8c84")}">${esc(a.monogram || a.name.slice(0, 2))}</span>

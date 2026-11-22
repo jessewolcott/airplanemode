@@ -52,7 +52,7 @@ profiles and design docs. Each app lives in its own repo and plugs in as a conta
 | [airplanemode-passport](https://github.com/jessewolcott/airplanemode-passport) | *Passport*: a travel deck-building card game for 2–4, with friends on the hotspot or bots |
 | [airplanemode-wayfarer](https://github.com/jessewolcott/airplanemode-wayfarer) | *Wayfarer*: travel trivia generated from Wikivoyage, with a daily round and high scores |
 | [airplanemode-couch](https://github.com/jessewolcott/airplanemode-couch) | *The Couch*: a therapist simulator (six therapists, from an Empath to a playful Narcissist) voiced by the on-board model |
-| [airplanemode-site](https://github.com/jessewolcott/airplanemode-site) | the homepage and one-line installer (not hosted yet) |
+| [airplanemode-site](https://github.com/jessewolcott/airplanemode-site) | the homepage and one-line installer, live at [airplanemode.xin](https://airplanemode.xin) |
 
 More app ideas (offline maps, a translator, a trip kit, a party quiz…) are in
 [docs/app-ideas.md](docs/app-ideas.md).
@@ -177,10 +177,11 @@ password at the end:
 
 ```sh
 command -v curl >/dev/null || { opkg update && opkg install curl || apk add -U curl; } >/dev/null 2>&1
-curl -fsSL https://raw.githubusercontent.com/jessewolcott/airplanemode-site/main/install.sh | sh
+curl -fsSL https://airplanemode.xin/install.sh | sh
 ```
 
-A homepage with a step-by-step guide and a command builder is coming, on its own server.
+The homepage, [airplanemode.xin](https://airplanemode.xin), has a step-by-step guide per device and a
+command builder for the options.
 
 **By hand:**
 

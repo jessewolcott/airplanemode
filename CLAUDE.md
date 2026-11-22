@@ -7,8 +7,9 @@ their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airpla
 `../airplanemode-cinema`, `../airplanemode-quickshot`, `../airplanemode-doom`, `../airplanemode-gatechange`,
 `../airplanemode-passport`, `../airplanemode-wayfarer`, `../airplanemode-couch`) and plug in as pinned container images. The public homepage +
 one-line installer is
-`../airplanemode-site` (not hosted yet; decisions 0011, 0012).
-Start with `README.md`, then `docs/decisions/` (0001–0017). They explain *why* things are
+`../airplanemode-site`, live at https://airplanemode.xin (GitHub Pages, own domain; decisions
+0011, 0012, 0019).
+Start with `README.md`, then `docs/decisions/` (0001–0019). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
@@ -132,7 +133,8 @@ Done and pushed (CI green):
 - apps Drop (`../airplanemode-drop`) and Travel Guide (`../airplanemode-guide`), both 0.1.0;
   project icon (`portal/icon.svg`), screenshots in `docs/screenshots/` (retake from the dev
   stack when the UI changes), app ideas in `docs/app-ideas.md`.
-- homepage + one-line installer (`../airplanemode-site`, not hosted yet; decisions 0011, 0012).
+- homepage + one-line installer (`../airplanemode-site`, decisions 0011, 0012), on GitHub Pages
+  at https://airplanemode.xin since decision 0019.
 - Cinema app (`../airplanemode-cinema`), Drop folders + admin "downloads off", app switches in
   the admin panel (decision 0013). Released: Drop 0.2.0, Cinema 0.1.1 (TV series).
 - QuickShot app (`../airplanemode-quickshot`, decision 0014): swipe feed over Drop's QuickShot

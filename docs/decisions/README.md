@@ -17,10 +17,11 @@ rewriting history.
 | [0009](0009-connectivity-supervisor.md) | Staying connected: auto-join, Ethernet first, rebind off, offline popup |
 | [0010](0010-home-vpn-devices-data-use.md) | Home VPN (WireGuard), connected devices with pause, data use per network |
 | [0011](0011-install-site.md) | A homepage and one-line installer in their own repo (`airplanemode-site`) |
-| [0012](0012-site-own-server.md) | The homepage goes on its own server (not yet set up), not GitHub Pages |
+| [0012](0012-site-own-server.md) | The homepage goes on its own server, not GitHub Pages (superseded by 0019) |
 | [0013](0013-cinema-drop-folders-app-switches.md) | Cinema, Drop folders and "downloads off" (admin), app switches on the menu |
 | [0014](0014-quickshot.md) | QuickShot: a swipe feed over a Drop folder, with comments in its own volume |
 | [0015](0015-doom.md) | Doom: PrBoom+ in the browser with touch controls, Freedoom, and the Layover airport episode made in code |
 | [0016](0016-games-and-couch.md) | Gate Change and Passport (card games with rooms and bots), Wayfarer (trivia from Wikivoyage), The Couch (therapist simulator) |
 | [0017](0017-no-model-apps-on-lite.md) | No model apps (Dark Light, Travel Guide, The Couch) on the GL.iNet lite profile |
 | [0018](0018-gemma-4-e2b.md) | Shared model: Gemma 4 E2B instead of Qwen2.5-1.5B |
+| [0019](0019-site-on-pages-own-domain.md) | The homepage on GitHub Pages under its own domain, airplanemode.xin (supersedes 0012) |

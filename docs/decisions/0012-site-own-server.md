@@ -1,6 +1,6 @@
 # 0012. The homepage goes on its own server, not GitHub Pages
 
-Date: 2026-11-21 · Status: accepted (amends 0011)
+Date: 2026-11-21 · Status: superseded by [0019](0019-site-on-pages-own-domain.md) (amends 0011)
 
 ## Context
 

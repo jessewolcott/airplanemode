@@ -22,7 +22,7 @@ private hotspot for your devices that:
   hotspots and which apps are on the menu, from any phone.
 
 <p align="center">
-  <img src="docs/screenshots/landing-online.png" width="230" alt="Landing page: online through the home VPN, with the app menu">
+  <img src="docs/screenshots/landing-online.png" width="230" alt="Landing page: online, with the app menu">
   <img src="docs/screenshots/landing-signin.png" width="230" alt="Landing page: this Wi-Fi needs a sign-in">
   <img src="docs/screenshots/admin-vpn-devices.png" width="230" alt="Admin panel: home VPN, connected devices, data use">
 </p>

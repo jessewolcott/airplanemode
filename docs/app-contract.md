@@ -63,6 +63,9 @@ An app can offer to open files from another app. Today that's Drop: its items ge
 ```
 
 `{id}` is replaced with the item's id. The offering app reads the list from `GET /api/apps`.
+Drop offers audio and video types only when the browser can play the format; any other type
+is offered as is. Doom, for example, declares `"types": ["application/x-doom-wad"]` (Drop gives
+`.wad` uploads that type).
 
 ## What the platform gives apps
 

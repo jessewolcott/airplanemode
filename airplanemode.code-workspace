@@ -10,6 +10,7 @@
 		{ "name": "airplanemode-guide", "path": "../airplanemode-guide" },
 		{ "name": "airplanemode-cinema", "path": "../airplanemode-cinema" },
 		{ "name": "airplanemode-quickshot", "path": "../airplanemode-quickshot" },
+		{ "name": "airplanemode-doom", "path": "../airplanemode-doom" },
 		{ "name": "airplanemode-site", "path": "../airplanemode-site" }
 	],
 	"settings": {

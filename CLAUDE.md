@@ -132,8 +132,7 @@ Done and pushed (CI green):
 - Cinema app (`../airplanemode-cinema`), Drop folders + admin "downloads off", app switches in
   the admin panel (decision 0013). Released: Drop 0.2.0, Cinema 0.1.0.
 - QuickShot app (`../airplanemode-quickshot`, decision 0014): swipe feed over Drop's QuickShot
-  folder; comments/likes/views in the `quickshot-data` volume. **Not released yet**; its
-  platform wiring is on branch `quickshot` until the v0.1.0 image exists.
+  folder; comments/likes/views in the `quickshot-data` volume. Released: 0.1.0.
 
 **No real hardware has been tested yet.** The R6S and adapters aren't bought. Parts:
 - NanoPi R6S 8 GB with the metal case,

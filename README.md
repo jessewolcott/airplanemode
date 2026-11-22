@@ -43,6 +43,7 @@ profiles and design docs. Each app lives in its own repo and plugs in as a conta
 | [airplanemode-drop](https://github.com/jessewolcott/airplanemode-drop) | *Drop*: pass files and notes between every device on the hotspot, keep movies for the flight |
 | [airplanemode-guide](https://github.com/jessewolcott/airplanemode-guide) | *Travel Guide*: all of Wikivoyage offline, plus "ask the guide" with the on-board model |
 | [airplanemode-cinema](https://github.com/jessewolcott/airplanemode-cinema) | *Cinema*: plays the films, shows and music on Drop, shelved by folder, each device resuming where it left off |
+| [airplanemode-quickshot](https://github.com/jessewolcott/airplanemode-quickshot) | *QuickShot*: an endless swipe feed of the clips in Drop's QuickShot folder, with likes and comments shared on the hotspot |
 | [airplanemode-site](https://github.com/jessewolcott/airplanemode-site) | the homepage and one-line installer (not hosted yet) |
 
 More app ideas (offline maps, a translator, a cinema, a trip kit…) are in

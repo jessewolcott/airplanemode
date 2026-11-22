@@ -4,17 +4,17 @@ Self-hosted, offline-first apps for a travel router (NanoPi R6S main target, GL.
 This repo is the **platform**: landing page, admin service (Wi-Fi control + connectivity
 supervisor), Caddy front door, shared llama.cpp model, hardware profiles, docs. Apps live in
 their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airplanemode-guide`,
-`../airplanemode-cinema`) and plug in as pinned container images. The public homepage +
+`../airplanemode-cinema`, `../airplanemode-quickshot`) and plug in as pinned container images. The public homepage +
 one-line installer is
 `../airplanemode-site` (not hosted yet; decisions 0011, 0012).
-Start with `README.md`, then `docs/decisions/` (0001–0013). They explain *why* things are
+Start with `README.md`, then `docs/decisions/` (0001–0014). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
 
 - All of this project's repos live side by side in **`H:\Github\airplanemode\`**: `airplanemode`
   (this platform repo), `airplanemode-darklight`, `airplanemode-drop`, `airplanemode-guide`,
-  `airplanemode-cinema`, `airplanemode-site`.
+  `airplanemode-cinema`, `airplanemode-quickshot`, `airplanemode-site`.
   New app repos go there too. H: is **exFAT**, so git needs
   `git config --global --add safe.directory H:/Github/airplanemode/<repo>` for each new repo.
 - Moving folders on H: while VS Code has them open can half-fail: Windows moves some files
@@ -131,6 +131,9 @@ Done and pushed (CI green):
 - homepage + one-line installer (`../airplanemode-site`, not hosted yet; decisions 0011, 0012).
 - Cinema app (`../airplanemode-cinema`), Drop folders + admin "downloads off", app switches in
   the admin panel (decision 0013). Released: Drop 0.2.0, Cinema 0.1.0.
+- QuickShot app (`../airplanemode-quickshot`, decision 0014): swipe feed over Drop's QuickShot
+  folder; comments/likes/views in the `quickshot-data` volume. **Not released yet**; its
+  platform wiring is on branch `quickshot` until the v0.1.0 image exists.
 
 **No real hardware has been tested yet.** The R6S and adapters aren't bought. Parts:
 - NanoPi R6S 8 GB with the metal case,

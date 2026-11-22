@@ -4,14 +4,16 @@ Self-hosted, offline-first apps for a travel router (NanoPi R6S main target, GL.
 This repo is the **platform**: landing page, admin service (Wi-Fi control + connectivity
 supervisor), Caddy front door, shared llama.cpp model, hardware profiles, docs. Apps live in
 their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airplanemode-guide`)
-and plug in as pinned container images.
-Start with `README.md`, then `docs/decisions/` (0001–0010). They explain *why* things are
+and plug in as pinned container images. The public homepage + one-line installer is
+`../airplanemode-site` (GitHub Pages; decision 0011).
+Start with `README.md`, then `docs/decisions/` (0001–0011). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
 
 - All of this project's repos live side by side in **`H:\Github\airplanemode\`**: `airplanemode`
-  (this platform repo), `airplanemode-darklight`, `airplanemode-drop`, `airplanemode-guide`.
+  (this platform repo), `airplanemode-darklight`, `airplanemode-drop`, `airplanemode-guide`,
+  `airplanemode-site`.
   New app repos go there too. H: is **exFAT**, so git needs
   `git config --global --add safe.directory H:/Github/airplanemode/<repo>` for each new repo.
 - Moving folders on H: while VS Code has them open can half-fail: Windows moves some files
@@ -76,6 +78,9 @@ VS Code tasks (`.vscode/tasks.json`) wrap all of the above.
 - Apps: pinned image tags in `compose.yaml` (never `latest`), plus a route in `Caddyfile` and
   an entry in `portal/apps.json`; CI checks all three. Reserved paths: `/api`, `/admin`.
   App rules: `docs/app-contract.md`.
+- The installer in `../airplanemode-site/install.sh` wraps `scripts/router-setup.sh` and
+  `scripts/update.sh`. Changing their env flags, a new `hardware/*.env`, or the install path
+  means updating the installer and its page too.
 - Validate input before saving (SSID ≤ 32 bytes, WPA key 8–63 printable or 64 hex, unicast MAC).
 
 ## Gotchas already learned

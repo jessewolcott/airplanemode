@@ -116,7 +116,7 @@
   {
     "id": "couch",
     "name": "The Couch",
-    "description": "A therapist simulator: talk things over with a Stoic or a Socialist, played by the on-board model. Not real therapy.",
+    "description": "A therapist simulator: talk things over with one of six therapists, from a gentle Empath to a playful Narcissist, played by the on-board model. Not real therapy.",
     "path": "/couch/",
     "monogram": "Co",
     "color": "#b98fd6",

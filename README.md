@@ -51,7 +51,7 @@ profiles and design docs. Each app lives in its own repo and plugs in as a conta
 | [airplanemode-gatechange](https://github.com/jessewolcott/airplanemode-gatechange) | *Gate Change*: a colour-and-number card game for 2–8, with friends on the hotspot or bots |
 | [airplanemode-passport](https://github.com/jessewolcott/airplanemode-passport) | *Passport*: a travel deck-building card game for 2–4, with friends on the hotspot or bots |
 | [airplanemode-wayfarer](https://github.com/jessewolcott/airplanemode-wayfarer) | *Wayfarer*: travel trivia generated from Wikivoyage, with a daily round and high scores |
-| [airplanemode-couch](https://github.com/jessewolcott/airplanemode-couch) | *The Couch*: a therapist simulator (Stoic or Socialist) voiced by the on-board model |
+| [airplanemode-couch](https://github.com/jessewolcott/airplanemode-couch) | *The Couch*: a therapist simulator (six therapists, from an Empath to a playful Narcissist) voiced by the on-board model |
 | [airplanemode-site](https://github.com/jessewolcott/airplanemode-site) | the homepage and one-line installer (not hosted yet) |
 
 More app ideas (offline maps, a translator, a trip kit, a party quiz…) are in

@@ -144,7 +144,8 @@ Done and pushed (CI green):
 - Gate Change, Passport, Wayfarer and The Couch (decision 0016): two card games with hotspot
   rooms (long-poll) and bots, trivia pre-built from the guide's ZIM, a therapist simulator
   (Stoic/Socialist schools as data files, fixed safety check). Played in the dev stack at
-  phone size, not on real phones. Released: all four 0.1.0. The homepage lists all ten apps
+  phone size, not on real phones. Released: all four 0.1.0; The Couch 0.2.0 (six therapists:
+  Empath, Pragmatist, Stoic, Ho Chi Minh's ethics, playful Nihilist and Narcissist). The homepage lists all ten apps
   (cards generated from `portal/apps.json`).
 - GL.iNet lite profile without the model apps (decision 0017).
 - Shared model switched to Gemma 4 E2B after comparing six models (decision 0018).

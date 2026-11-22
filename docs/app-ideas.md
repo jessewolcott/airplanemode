@@ -20,7 +20,7 @@ offline at runtime, usable without the model, small in memory.
 | [Gate Change](https://github.com/jessewolcott/airplanemode-gatechange) | Colour-and-number card game for 2–8: tables on the hotspot, bots for empty seats | no |
 | [Passport](https://github.com/jessewolcott/airplanemode-passport) | Travel deck-building card game for 2–4: tables on the hotspot, bots for empty seats | no |
 | [Wayfarer](https://github.com/jessewolcott/airplanemode-wayfarer) | Solo travel trivia from a question bank built from the Travel Guide's Wikivoyage | no |
-| [The Couch](https://github.com/jessewolcott/airplanemode-couch) | Therapist simulator: a Stoic or a Socialist, voiced by the model, with an offline fallback | optional |
+| [The Couch](https://github.com/jessewolcott/airplanemode-couch) | Therapist simulator: six therapists (Empath, Pragmatist, Stoic, Ho Chi Minh's ethics, playful Nihilist and Narcissist), voiced by the model, with an offline fallback | optional |
 
 ## Next up
 

@@ -160,11 +160,13 @@ class Room:
         return [s for s in self.seats if s.human]
 
     def seen(self, token):
-        """This person is still around. Never undoes a leave or an autopilot."""
+        """This person is still around. Never undoes a leave or an autopilot. Only a seated
+        person who hasn't left keeps the room alive (not spectators, not a leaver's last poll)."""
         i = self.seat_of(token)
         if i is not None:
             self.seats[i].seen = time.monotonic()
-        self.touched = time.monotonic()
+            if not self.seats[i].left:
+                self.touched = time.monotonic()
         return i
 
     def away(self, i, now=None):

@@ -186,7 +186,7 @@ Done and pushed (CI green):
 - Rooms SDK (decision 0022): `amrooms` in `sdk/rooms` (seats, tokens, presence, long-poll,
   driver, registry, `whois()`); CI runs its tests. Apps pin it in `requirements.txt` as the
   `rooms-vX.Y.Z` tag's tarball (`#subdirectory=sdk/rooms`); `rooms-v*` tags publish nothing.
-  Released `rooms-v0.1.0`. Gate Change and Passport moved onto it (seat names/emoji from who's
+  Released `rooms-v0.1.1` (0.1.1: only a seated person's polls keep a room alive). Gate Change and Passport moved onto it (seat names/emoji from who's
   who, rejoin from another browser); checked by tests and in the dev stack at phone size.
 
 **No real hardware has been tested yet.** The R6S build is in progress. Parts:

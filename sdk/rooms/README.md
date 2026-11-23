@@ -9,7 +9,7 @@ Used by Gate Change and Passport. Platform decision 0022.
 `requirements.txt`:
 
 ```
-amrooms @ https://github.com/jessewolcott/airplanemode/archive/refs/tags/rooms-v0.1.0.tar.gz#subdirectory=sdk/rooms
+amrooms @ https://github.com/jessewolcott/airplanemode/archive/refs/tags/rooms-v0.1.1.tar.gz#subdirectory=sdk/rooms
 ```
 
 A tarball, not `git+https`, so the image needs no git. While changing the SDK and an app

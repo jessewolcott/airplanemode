@@ -226,9 +226,15 @@ def test_registry():
         open_.leave(tok)
         rooms.sweep()
         assert "OPEN" not in rooms.rooms                         # (the last seat left a lobby: empty)
-        live[0].leave(live[0].seats[0].token)                    # left a game: kept for the grace period
+        gone = live[0].seats[0].token
+        live[0].leave(gone)                                      # left a game: kept for the grace period
         rooms.sweep()
         assert live[0].code in rooms.rooms
+        live[0].touched -= 100
+        before = live[0].touched
+        live[0].seen(gone)                                       # the leaver's last poll,
+        live[0].seen(None)                                       # or a spectator's, keeps nothing alive
+        assert live[0].touched == before
         rooms.sweep(time.monotonic() + 61)
         assert live[0].code not in rooms.rooms
         rooms.idle = -1

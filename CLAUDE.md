@@ -149,6 +149,14 @@ Done and pushed (CI green):
   phone size, not on real phones. Released: all four 0.1.0; The Couch 0.2.0 (six therapists:
   Empath, Pragmatist, Stoic, Ho Chi Minh's ethics, playful Nihilist and Narcissist). The homepage lists all ten apps
   (cards generated from `portal/apps.json`).
+- Review-fix releases (found while writing the `llm/` notes): Wayfarer 0.2.0 (resume after a
+  reload, speed bonus up to 50, idle-timer and leaderboard-saved fixes), Gate Change 0.1.1
+  (rejoining reclaims your seat, unattended rounds advance, a full server never closes a live
+  game), Passport 0.1.1 (leaving sticks, lobby list no longer 500s, hidden-info test), The Couch
+  0.2.1 ("saying" no longer means "give me a quote", a busy queue doesn't start the cooldown,
+  Gemma stop token). Page changes in these were checked by tests/code only, not in a browser.
+- Every repo has checked-in `llm/` notes ("how it's built", for LLMs and engineers), kept out of
+  the images by `.dockerignore`. The code wins when they disagree; fix the notes.
 - GL.iNet lite profile without the model apps (decision 0017).
 - Shared model switched to Gemma 4 E2B after comparing six models (decision 0018).
 

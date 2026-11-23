@@ -48,7 +48,7 @@ a real OpenWrt 24.10 in Docker. Everything else has been tested against a mock r
    `scripts/router-setup.sh` on the router, and updating the denied list in
    `admin/tests/test_openwrt_live.py`.
 2. Save with `uci apply` (`router.py:196`), never `uci commit`: ubus sessions can't commit.
-3. Every endpoint that changes the router takes `router_lock` (`main.py:83`). The supervisor
+3. Every endpoint that changes the router takes `router_lock` (`main.py:88`). The supervisor
    tick takes it too.
 4. The service only touches sections it owns (list in [router-control.md](router-control.md)).
    A firewall rule must never point at a zone that doesn't exist, because fw4 then rejects the whole ruleset.

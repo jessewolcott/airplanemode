@@ -8,7 +8,7 @@ Decisions 0010 (VPN, devices, data use) and 0013 (app switches, admin session fo
 
 The user pastes (or loads from a file) a wg-quick style config. `admin/vpn.py`
 `parse_wg_conf(text)` validates it **before** anything touches the router
-(`PUT /api/admin/vpn`, `main.py:638-644`):
+(`PUT /api/admin/vpn`, `main.py:652-658`):
 
 - It must be a string ≤ 8000 chars. Comments (`#...`) are stripped. Every non-empty line is a
   `[Section]` header or `Key = value` inside a section, else "Line N ... isn't 'Key = value'".
@@ -47,7 +47,7 @@ The private key lives only in the router's uci config. No API response contains 
 
 ### Status
 
-`vpn_summary()` (`main.py:324`) combines `vpn_config()` with `vpn_status()` (only when enabled):
+`vpn_summary()` (`main.py:329`) combines `vpn_config()` with `vpn_status()` (only when enabled):
 - `handshake_age` = now - the latest handshake.
 - `connected` = `None` if the status is unknown (`luci.wireguard` unavailable, i.e.
   luci-proto-wireguard not installed). Otherwise true when the handshake is younger than `VPN_FRESH` = 180 s.

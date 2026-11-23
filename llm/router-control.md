@@ -11,7 +11,7 @@ consequences), but it can't run commands, read files, or touch system, SSH or pa
 
 ## Two backends, one interface
 
-`main.py:72-78` picks `MockRouter()` when `ROUTER_BACKEND=mock`, else
+`main.py:77-83` picks `MockRouter()` when `ROUTER_BACKEND=mock`, else
 `OpenWrtRouter(ROUTER_URL, ROUTER_USER, ROUTER_PASSWORD, client, lan_ip, http_port, wan_iface)`.
 Both implement the same async methods:
 

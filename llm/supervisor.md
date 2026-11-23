@@ -1,10 +1,10 @@
 # Supervisor, captive-portal probing and the offline popup
 
-Decision 0009 (supervisor) and 0007 (captive portal). Code: `admin/main.py:170-364`.
+Decision 0009 (supervisor) and 0007 (captive portal). Code: `admin/main.py:175-369`.
 
 ## The loop
 
-`lifespan` starts `_supervise_forever()` unless `SUPERVISE_INTERVAL <= 0` (`main.py:88`).
+`lifespan` starts `_supervise_forever()` unless `SUPERVISE_INTERVAL <= 0` (`main.py:93`).
 It sleeps 3 s, then repeats forever: `await supervisor.tick()`, catch and log any exception,
 sleep `SUPERVISE_INTERVAL` (30 s in production, 5 s in dev). Ticks are therefore at least 30 s
 apart plus however long the tick takes.
@@ -24,7 +24,7 @@ to `time.monotonic()`. The tests pass fake times (`tick(0)`, `tick(30)`, ...).
 | `counters` | Last byte counters per uplink (`ethernet`/`wifi`) |
 | `session` | Data used on the current primary uplink: `{name, rx, tx, since}` |
 
-## One tick (`_tick`, `main.py:255-283`)
+## One tick (`_tick`, `main.py:260-288`)
 
 ```
 eth  = router.ethernet_status()        # network.interface status wan
@@ -56,7 +56,7 @@ Notes:
 - Ethernet doesn't stop the Wi-Fi STA. Both can be up, and route metrics pick Ethernet.
   Auto-join only runs with **no** uplink, so with a cable in, the box doesn't go hunting.
 
-## Auto-join (`_autojoin`, `main.py:222-249`)
+## Auto-join (`_autojoin`, `main.py:227-254`)
 
 Returns a short action string (or `None`):
 
@@ -101,7 +101,7 @@ link drops), and later than that if joins are being tried. The test
 `test_offline_popup_waits_during_join` checks that: two failed joins of a wrong-key network,
 then the popup.
 
-## Captive-portal probe (`probe()`, `main.py:307-321`)
+## Captive-portal probe (`probe()`, `main.py:312-326`)
 
 - Mock: `router.internet()`, `login_url="/api/mock/portal"` if captive.
 - Real: `GET PROBE_URL` (default `http://connectivitycheck.gstatic.com/generate_204`),
@@ -115,7 +115,7 @@ then the popup.
 
 ## `/api/status`
 
-`main.py:338-364`. It recomputes when `?refresh=1`, empty, or older than 10 s:
+`main.py:343-369`. It recomputes when `?refresh=1`, empty, or older than 10 s:
 
 1. `supervisor.links()` (ethernet + upstream status). On a `RouterError` both are
    `{"connected": None}`.
@@ -166,7 +166,7 @@ checking `fw4 print` for `jump dstnat_lan`).
 
 The admin panel's `GET /api/admin/wifi` reports `offline_popup` (from `portal_mode()`).
 
-## Data-use counting (`count_usage`, `main.py:180-207`)
+## Data-use counting (`count_usage`, `main.py:185-212`)
 
 Runs at the end of each **linked** tick:
 1. `router.uplink_counters()` gives `{"ethernet": {rx, tx}, "wifi": {rx, tx}}` for the uplinks that are up.

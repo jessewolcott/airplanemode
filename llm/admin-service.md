@@ -5,7 +5,7 @@ A single FastAPI app (~700 lines) plus two helper modules:
 - `admin/vpn.py`: WireGuard config parser. See [vpn-devices-usage.md](vpn-devices-usage.md).
 - `admin/static/index.html`: the admin panel. See [frontends.md](frontends.md).
 
-The module docstring (`main.py:1-33`) lists most endpoints. It doesn't list `/api/apps`,
+The module docstring (`main.py:1-37`) lists most endpoints. It doesn't list `/api/apps`,
 `/api/admin/apps`, `/api/admin/apps/{id}` or `/api/admin/session`, which were added later
 (decision 0013).
 
@@ -60,7 +60,7 @@ The supervisor and HTTP handlers share **one** ubus session (`OpenWrtRouter.sid`
 `uci apply` applies *everything staged in that session*, so two interleaved changes could
 apply each other half-done. Every handler that changes the router does
 `async with router_lock:`, and `Supervisor.tick()` holds it for the whole tick
-(`main.py:251-253`). Handlers that only touch the local `Store` (autojoin, forget, app
+(`main.py:256-258`). Handlers that only touch the local `Store` (autojoin, forget, app
 switches, usage reset) don't take it. Read-only handlers (wifi overview, scan, devices
 list, vpn summary, status) don't take it either. `test_router_changes_are_serialized` checks
 the ordering.
@@ -70,7 +70,7 @@ its tick.
 
 ## Store (`networks.json`)
 
-`Store(DATA_DIR / "networks.json")` (`main.py:104-166`). It's loaded at import time. A missing
+`Store(DATA_DIR / "networks.json")` (`main.py:109-171`). It's loaded at import time. A missing
 file is fine, and a corrupt file logs a warning and starts with defaults. `save()` writes
 `networks.tmp` with `indent=1`, `chmod 600`, then atomically replaces the real file. OS errors
 are logged, never raised.
@@ -98,14 +98,14 @@ are logged, never raised.
 
 ## Authentication
 
-- Sessions are an in-memory dict `token → expiry` (`_sessions`, `main.py:369`). A token is
+- Sessions are an in-memory dict `token → expiry` (`_sessions`, `main.py:374`). A token is
   `secrets.token_urlsafe(32)` and lasts 12 h.
 - `POST /api/admin/login {password}`: 503 if `ADMIN_PASSWORD` is unset. It compares with
   `hmac.compare_digest` inside `_login_lock`, so only one check runs at a time, and a wrong
   password sleeps 1.5 s while holding the lock. Guessing can't be parallelised that way. Expired
   sessions are pruned. The response sets cookie `am_admin` with `HttpOnly`, `SameSite=Strict`,
   `Max-Age=43200`, `Path=/`. A wrong password gives 401 "Wrong password.".
-- `require_admin(request)` (`main.py:395`) is a dependency on every admin route:
+- `require_admin(request)` (`main.py:400`) is a dependency on every admin route:
   - a missing or expired cookie gives **401** "Please sign in." (and drops the token);
   - a non-GET request without the header `X-AirplaneMode: 1` gives **403** "Missing request header."
     That's the CSRF defence: cross-site form posts can't set custom headers.
@@ -163,7 +163,7 @@ Pydantic body errors are 422 (the panel shows "Check the fields and try again.")
 | `POST /api/admin/vpn/enabled` | `{enabled}` | Under the lock: `set_vpn_enabled`. 400 "No home VPN is set up yet." if none |
 | `DELETE /api/admin/vpn` | none | Under the lock: `remove_vpn()` |
 
-### Mock-only (`ROUTER_BACKEND=mock`, `main.py:664-695`), no auth
+### Mock-only (`ROUTER_BACKEND=mock`, `main.py:678-709`), no auth
 
 | Method + path | Does |
 |---|---|

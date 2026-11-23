@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amrooms"
+version = "0.1.0"
+description = "Rooms, seats, presence and long-poll for AirplaneMode multiplayer apps"
+requires-python = ">=3.10"
+dependencies = ["httpx>=0.27,<1"]
+
+[tool.setuptools]
+packages = ["amrooms"]

@@ -81,7 +81,9 @@ box is three small edits in this repo and nothing else.
 ## Optional: playing together on the hotspot
 
 Everyone on the hotspot can reach the same app, so multiplayer needs no accounts or internet.
-The pattern Gate Change and Passport use (decision 0016), and Darklight's party mode before them:
+**Use the Rooms SDK** ([`sdk/rooms`](../sdk/rooms/README.md), decision 0022) for the seats,
+tokens, presence, long-poll, bot driver and who's who names; Gate Change and Passport do. The
+pattern it implements (decision 0016):
 
 - **Rooms in memory** with a short join code, listed on the app's home screen while open,
   capped in number and forgotten after an idle timeout. No volume.

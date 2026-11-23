@@ -27,3 +27,4 @@ rewriting history.
 | [0019](0019-site-on-pages-own-domain.md) | The homepage on GitHub Pages under its own domain, airplanemode.xin (supersedes 0012) |
 | [0020](0020-prompts-on-gemma-4-e2b.md) | The model apps' prompts and checks retuned for Gemma 4 E2B, with an eval per app |
 | [0021](0021-whos-who.md) | Who's who: a name and a picture per device (MAC + cookie), kept by the admin service |
+| [0022](0022-rooms-sdk.md) | A shared Rooms SDK (`sdk/rooms`, `amrooms`) for multiplayer apps; Gate Change and Passport use it |

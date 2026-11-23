@@ -86,7 +86,9 @@ VS Code tasks (`.vscode/tasks.json`) wrap all of the above.
   App rules: `docs/app-contract.md`.
 - The installer in `../airplanemode-site/install.sh` wraps `scripts/router-setup.sh` and
   `scripts/update.sh`. Changing their env flags, a new `hardware/*.env`, or the install path
-  means updating the installer and its page too.
+  means updating the installer and its page too. The page is in seven languages: change
+  English `index.html`, update all six translations (`i18n/<lang>.json`), run
+  `tools/build_i18n.py` and `tools/check_i18n.py`; CI fails if they don't match.
 - The admin service reads `portal/apps.json` (bind-mounted at `/config/apps.json`: restart
   admin after editing it) and hides apps listed in `hidden_apps` (its settings file).
   `GET /api/apps` is the menu; Drop's "Play in ..." uses it too (`opens` field). Apps learn
@@ -148,7 +150,8 @@ Done and pushed (CI green):
   (therapists as data files, fixed safety check). Played in the dev stack at
   phone size, not on real phones. Released: all four 0.1.0; The Couch 0.2.0 (six therapists:
   Empath, Pragmatist, Stoic, Ho Chi Minh's ethics, playful Nihilist and Narcissist). The homepage lists all ten apps
-  (cards generated from `portal/apps.json`).
+  (cards copied by hand from `portal/apps.json`; the site's `tools/check_i18n.py` checks them,
+  and a card change means updating its six translations too).
 - Review-fix releases (found while writing the `llm/` notes): Wayfarer 0.2.0 (resume after a
   reload, speed bonus up to 50, idle-timer and leaderboard-saved fixes), Gate Change 0.1.1
   (rejoining reclaims your seat, unattended rounds advance, a full server never closes a live

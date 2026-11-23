@@ -61,7 +61,8 @@ To have Drop offer it, add `opens`.
    `LLM_URL=` empty), all `*_MEM`, Drop limits, `ROUTER_BACKEND`, `ROUTER_URL`.
 2. Add it to the CI matrix in `.github/workflows/check.yml` and to the VS Code check task.
 3. Document it in `docs/hardware.md` and the README. A decision record if it changes targets (0002).
-4. Update `../airplanemode-site` (installer detection + page).
+4. Update `../airplanemode-site` (installer detection + page, and the page's six translations:
+   `i18n/<lang>.json`, `tools/build_i18n.py`, `tools/check_i18n.py`).
 
 ## Changing supervisor behaviour
 

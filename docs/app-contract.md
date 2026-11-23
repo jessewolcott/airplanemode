@@ -125,3 +125,6 @@ is offered as is. Doom, for example, declares `"types": ["application/x-doom-wad
 - `Caddyfile`: `redir /<id> /<id>/` and a `handle_path /<id>/*` block.
 - `portal/apps.json`: name, description, path, `uses_llm`.
 - Memory settings for the new app in each `hardware/*.env` that runs it.
+- A card on the homepage (`../airplanemode-site/index.html`, mirroring `apps.json`), translated
+  into all six languages (`i18n/<lang>.json`, then `tools/build_i18n.py` and
+  `tools/check_i18n.py`; that repo's CI fails if they don't match).

@@ -22,10 +22,24 @@ offline at runtime, usable without the model, small in memory.
 | [Wayfarer](https://github.com/jessewolcott/airplanemode-wayfarer) | Solo travel trivia from a question bank built from the Travel Guide's Wikivoyage | no |
 | [The Couch](https://github.com/jessewolcott/airplanemode-couch) | Therapist simulator: six therapists (Empath, Pragmatist, Stoic, Ho Chi Minh's ethics, playful Nihilist and Narcissist), voiced by the model, with an offline fallback | optional |
 
+## Planned (agreed 2026-11-22)
+
+In build order. Who's who and the Rooms SDK come first because the others lean on them.
+
+| Item | What it is | Notes | Model | Size |
+|---|---|---|---|---|
+| **Who's who** (platform) | Each device picks a name and avatar once, on the landing page; every app can read it | Admin service stores it by MAC (it already sees device names). `GET /api/me` with the forwarded request, so no accounts. Feeds resume positions, scores, Rooms seats | no | small |
+| **Rooms SDK** (platform) | Shared lobby, seats, rejoin, bot takeover and long-poll channel for multiplayer apps | Pulled out of Gate Change and Passport, which then move onto it. A small Python package vendored into each app (no extra container), identity from Who's who | no | medium |
+| **Sync Watch** (in Cinema) | Host plays, pauses, seeks; every phone follows in lockstep, each on its own earbuds | Built on the Rooms SDK. Drift correction by nudging `playbackRate`, hard seek past ~1 s. Phones still play from the box, so 4–6 streams of one file is the load to test on the R6S | no | small–medium |
+| **Lost & found** | "Last seen 14:32" for every device that has left the hotspot, with names from Who's who | Admin service already sees DHCP leases and station lists; this keeps a short history. Admin-only by default (it's location data about people) | no | small |
+| **First aid & emergency** | WikiMed ZIM plus a hand-curated page per country: emergency numbers, embassies, "I need a doctor" in the local language | **No model, on purpose**: safety content must not be generated. Reuses the Travel Guide's ZIM reader. The curated data is checked into the repo and reviewed by hand | no | small–medium |
+
 ## Next up
 
 | App | What it does | Why it fits | Model | Size | Storage |
 |---|---|---|---|---|---|
+| **TV mode on the box's HDMI** | When a TV is plugged into the R6S's HDMI port, the box shows a kiosk screen: departure board (itinerary, countdowns, who's online, uplink state), then Sync Watch and Party quiz boards | R6S has HDMI out (RK3588S); GL.iNet boxes don't, so it's R6S-only and phones/laptops can open the same `/tv` page instead. Detect with `/sys/class/drm/card*-HDMI-A-*/status`; a kiosk container (cage + Chromium) gets `/dev/dri` only, not privileged. **Untested**: whether FriendlyWrt's kernel exposes the DRM device and how video decode performs | no | medium | ~400 MB image |
+| **Jellyfin in Cinema** | Browse your home Jellyfin server when the box is online; download items to Drop for the flight | Live streaming over hotel Wi-Fi is the weak case; "download for offline" is the win, and it fits the per-app sync hook. Reaches a home server through the existing home VPN (`amvpn`), or a public URL. API key stored in admin settings like other secrets | no | medium | whatever you download |
 | **Offline maps** | Pan and search a map of the trip's region; pin the hotel, share pins with the group | Maps are the first thing that breaks without data. Protomaps `.pmtiles` extracts (one file per region) plus MapLibre, all served locally | no | medium | 50 MB–2 GB per region |
 | **Phrasebook & translator** | Translate typed text between common languages, plus a phrasebook per country | Real offline translation models (Bergamot / Argos, ~20–40 MB per language pair) run fine on the R6S's CPU. The shared model is too small to translate well, so it would only suggest phrases | optional | medium | ~30 MB per language pair |
 | **Trip kit** | Shared itinerary, packing list and expense splitter ("who owes whom") for the group on the hotspot | Every group trip needs it, and it's all small local data | optional (parse "Dinner 84 EUR, split 4") | medium | tiny |
@@ -50,5 +64,4 @@ offline at runtime, usable without the model, small in memory.
   Travel Guide's `/health` + download progress is the pattern to generalise).
 - **Shared storage quota** shown in the admin panel, since Drop, Cinema, Maps and Library
   all compete for the same flash.
-- **Who's who**: the admin panel already knows each device's name; apps could use it for
-  per-person resume positions and quiz scores without accounts.
+- **Who's who** and the **Rooms SDK**: now planned, see above.

@@ -155,6 +155,12 @@ Done and pushed (CI green):
   game), Passport 0.1.1 (leaving sticks, lobby list no longer 500s, hidden-info test), The Couch
   0.2.1 ("saying" no longer means "give me a quote", a busy queue doesn't start the cooldown,
   Gemma stop token). Page changes in these were checked by tests/code only, not in a browser.
+- Home button (app contract item 10): the same house icon at the top right of every screen
+  of every app, back to the menu; asks first only where leaving would lose progress (Doom
+  mid-level, Drop uploads, Dark Light party host, unsent QuickShot comments). Released: Dark Light
+  0.3.1, Drop 0.2.2, Guide 0.1.1, Cinema 0.1.2, QuickShot 0.1.1, Doom 0.1.1, Gate Change 0.1.2,
+  Passport 0.1.2, Wayfarer 0.2.1, The Couch 0.2.2. Checked at phone and desktop size in the dev
+  stack, not on real phones.
 - Every repo has checked-in `llm/` notes ("how it's built", for LLMs and engineers), kept out of
   the images by `.dockerignore`. The code wins when they disagree; fix the notes.
 - GL.iNet lite profile without the model apps (decision 0017).

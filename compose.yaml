@@ -94,14 +94,14 @@ services:
   # Apps that need the model (darklight, guide, couch) run only with the "llm" profile.
   darklight:
     profiles: ["llm"]           # model app: not on the GL.iNet (lite) profile
-    image: ghcr.io/jessewolcott/airplanemode-darklight:0.3.0
+    image: ghcr.io/jessewolcott/airplanemode-darklight:0.3.1
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}
     mem_limit: ${DARKLIGHT_MEM:-256m}
     restart: unless-stopped
 
   drop:
-    image: ghcr.io/jessewolcott/airplanemode-drop:0.2.1
+    image: ghcr.io/jessewolcott/airplanemode-drop:0.2.2
     environment:
       DROP_MAX_BYTES: ${DROP_MAX_BYTES:-4g}
       DROP_MAX_FILE: ${DROP_MAX_FILE:-2g}
@@ -114,7 +114,7 @@ services:
 
   # Plays the videos and music on Drop. The browser streams them from /drop/ directly.
   cinema:
-    image: ghcr.io/jessewolcott/airplanemode-cinema:0.1.1
+    image: ghcr.io/jessewolcott/airplanemode-cinema:0.1.2
     environment:
       DROP_URL: http://drop:8000
     volumes:
@@ -125,7 +125,7 @@ services:
   # An endless feed of the videos in Drop's "QuickShot" folder. Comments, likes and views live
   # in its own volume, so they survive restarts and updates.
   quickshot:
-    image: ghcr.io/jessewolcott/airplanemode-quickshot:0.1.0
+    image: ghcr.io/jessewolcott/airplanemode-quickshot:0.1.1
     environment:
       DROP_URL: http://drop:8000
       ADMIN_URL: http://admin:8000    # the admin can delete any comment
@@ -137,13 +137,13 @@ services:
   # Doom (PrBoom+ in WebAssembly): static files only, the game runs in the browser. Plays
   # Freedoom, the Layover episode, and .wad files from Drop.
   doom:
-    image: ghcr.io/jessewolcott/airplanemode-doom:0.1.0
+    image: ghcr.io/jessewolcott/airplanemode-doom:0.1.1
     mem_limit: ${DOOM_MEM:-32m}
     restart: unless-stopped
 
   guide:
     profiles: ["llm"]           # model app: not on the GL.iNet (lite) profile
-    image: ghcr.io/jessewolcott/airplanemode-guide:0.1.0
+    image: ghcr.io/jessewolcott/airplanemode-guide:0.1.1
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}
     volumes:
@@ -153,19 +153,19 @@ services:
 
   # Gate Change: colour-and-number card game, rooms on the hotspot + bots. In memory only.
   gatechange:
-    image: ghcr.io/jessewolcott/airplanemode-gatechange:0.1.1
+    image: ghcr.io/jessewolcott/airplanemode-gatechange:0.1.2
     mem_limit: ${GATECHANGE_MEM:-64m}
     restart: unless-stopped
 
   # Passport: travel deck-builder, rooms on the hotspot + bots. In memory only.
   passport:
-    image: ghcr.io/jessewolcott/airplanemode-passport:0.1.1
+    image: ghcr.io/jessewolcott/airplanemode-passport:0.1.2
     mem_limit: ${PASSPORT_MEM:-64m}
     restart: unless-stopped
 
   # Wayfarer: travel trivia. Questions ship in the image (made from Wikivoyage); high scores in its volume.
   wayfarer:
-    image: ghcr.io/jessewolcott/airplanemode-wayfarer:0.2.0
+    image: ghcr.io/jessewolcott/airplanemode-wayfarer:0.2.1
     environment:
       DATA_DIR: /data
       TZ: ${TZ:-UTC}                # the daily flight changes at local midnight
@@ -177,7 +177,7 @@ services:
   # The Couch: therapist simulator. Conversations stay in the browser; nothing is stored on the box.
   couch:
     profiles: ["llm"]           # model app: not on the GL.iNet (lite) profile
-    image: ghcr.io/jessewolcott/airplanemode-couch:0.2.1
+    image: ghcr.io/jessewolcott/airplanemode-couch:0.2.2
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}
     mem_limit: ${COUCH_MEM:-64m}

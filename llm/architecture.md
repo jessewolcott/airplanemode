@@ -27,7 +27,7 @@ Defined in `compose.yaml`. Only `proxy` publishes a port.
 | `proxy` | `caddy:2.8-alpine` | 80, published as `${LAN_IP}:${HTTP_PORT}` (default `127.0.0.1:8080`) | `./Caddyfile` (ro), `./portal` → `/srv/portal` (ro), `caddy-data` | Front door: landing page, app routes, `/api` + `/admin` |
 | `admin` | built from `./admin` (tag `airplanemode-admin:local`) | 8000 (uvicorn) | `admin-data` → `/data`, `./portal/apps.json` → `/config/apps.json` (ro) | Status API, captive check, admin panel + API, supervisor |
 | `llm` | `ghcr.io/ggml-org/llama.cpp:server-b12602` | 8080 | `models` → `/models` | Shared model, **only with profile `llm`** (R6S) |
-| `darklight` | `ghcr.io/jessewolcott/airplanemode-darklight:0.3.0` | 8000 | (none) | Text adventure (uses LLM) |
+| `darklight` | `ghcr.io/jessewolcott/airplanemode-darklight:0.3.1` | 8000 | (none) | Text adventure (uses LLM) |
 | `drop` | `...-drop:0.2.1` | 8000 | `drop-data` | File/notes sharing. Asks admin for session checks |
 | `cinema` | `...-cinema:0.1.1` | 8000 | `cinema-data` (posters) | Plays Drop's media, TV series since 0.1.1 (`DROP_URL=http://drop:8000`) |
 | `quickshot` | `...-quickshot:0.1.0` | 8000 | `quickshot-data` | Swipe feed over Drop's QuickShot folder. Admin deletes comments |

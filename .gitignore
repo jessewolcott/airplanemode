@@ -4,5 +4,3 @@
 __pycache__/
 *.pyc
 .playwright-mcp/
-# Local "how it is built" notes for LLMs and engineers; not published.
-llm/

@@ -9,7 +9,7 @@ Authoritative rules: `docs/app-contract.md`. Background: decisions 0001, 0005, 0
 | `darklight` | `airplanemode-darklight:0.3.1` | yes (optional) | none | llm | Text adventures (three worlds), party mode |
 | `drop` | `airplanemode-drop:0.2.2` | no | `drop-data` | admin (`ADMIN_URL`) | Files/notes between devices. Folders, "downloads off" for the admin. `.wad` = `application/x-doom-wad` |
 | `cinema` | `airplanemode-cinema:0.1.2` | no | `cinema-data` (posters) | drop (`DROP_URL`) | Streams Drop's media straight from `/drop/api/files/<id>`. Declares `opens` |
-| `quickshot` | `airplanemode-quickshot:0.1.1` | no | `quickshot-data` (comments.json, stats.json) | drop, admin | Swipe feed over Drop's top-level `QuickShot` folder |
+| `quickshot` | `airplanemode-quickshot:0.1.2` | no | `quickshot-data` (comments.json, stats.json) | drop, admin | Swipe feed over Drop's top-level `QuickShot` folder |
 | `doom` | `airplanemode-doom:0.1.1` | no | none (saves in the browser's IndexedDB) | drop (from the browser, `../drop/`) | PrBoom+ in WebAssembly, static files on busybox httpd (32m). Freedoom + Layover + Drop WADs. Declares `opens` (decision 0015) |
 | `gatechange` | `airplanemode-gatechange:0.1.3` | no | none (rooms in memory) | none | Colour/number card game, rooms + long-poll + bots (decision 0016) |
 | `passport` | `airplanemode-passport:0.1.2` | no | none (rooms in memory) | none | Deck-builder, same room shape as gatechange |

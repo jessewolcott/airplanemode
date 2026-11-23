@@ -125,7 +125,7 @@ services:
   # An endless feed of the videos in Drop's "QuickShot" folder. Comments, likes and views live
   # in its own volume, so they survive restarts and updates.
   quickshot:
-    image: ghcr.io/jessewolcott/airplanemode-quickshot:0.1.1
+    image: ghcr.io/jessewolcott/airplanemode-quickshot:0.1.2
     environment:
       DROP_URL: http://drop:8000
       ADMIN_URL: http://admin:8000    # the admin can delete any comment

@@ -163,7 +163,8 @@ Done and pushed (CI green):
   mid-level, Drop uploads, Dark Light party host, unsent QuickShot comments). Released: Dark Light
   0.3.1, Drop 0.2.2, Guide 0.1.1, Cinema 0.1.2, QuickShot 0.1.1, Doom 0.1.1, Gate Change 0.1.2,
   Passport 0.1.2, Wayfarer 0.2.1, The Couch 0.2.2. Checked at phone and desktop size in the dev
-  stack, not on real phones.
+  stack, not on real phones. Then The Couch 0.2.3 (phone header, *italic*/**bold** in replies)
+  and Gate Change 0.1.3 (centred bar titles). Screenshots retaken after these changes.
 - Every repo has checked-in `llm/` notes ("how it's built", for LLMs and engineers), kept out of
   the images by `.dockerignore`. The code wins when they disagree; fix the notes.
 - GL.iNet lite profile without the model apps (decision 0017).

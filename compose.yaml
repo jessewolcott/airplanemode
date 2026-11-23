@@ -153,7 +153,7 @@ services:
 
   # Gate Change: colour-and-number card game, rooms on the hotspot + bots. In memory only.
   gatechange:
-    image: ghcr.io/jessewolcott/airplanemode-gatechange:0.1.2
+    image: ghcr.io/jessewolcott/airplanemode-gatechange:0.1.3
     mem_limit: ${GATECHANGE_MEM:-64m}
     restart: unless-stopped
 
@@ -177,7 +177,7 @@ services:
   # The Couch: therapist simulator. Conversations stay in the browser; nothing is stored on the box.
   couch:
     profiles: ["llm"]           # model app: not on the GL.iNet (lite) profile
-    image: ghcr.io/jessewolcott/airplanemode-couch:0.2.2
+    image: ghcr.io/jessewolcott/airplanemode-couch:0.2.3
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}
     mem_limit: ${COUCH_MEM:-64m}

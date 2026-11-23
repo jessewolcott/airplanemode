@@ -27,16 +27,16 @@ Defined in `compose.yaml`. Only `proxy` publishes a port.
 | `proxy` | `caddy:2.8-alpine` | 80, published as `${LAN_IP}:${HTTP_PORT}` (default `127.0.0.1:8080`) | `./Caddyfile` (ro), `./portal` → `/srv/portal` (ro), `caddy-data` | Front door: landing page, app routes, `/api` + `/admin` |
 | `admin` | built from `./admin` (tag `airplanemode-admin:local`) | 8000 (uvicorn) | `admin-data` → `/data`, `./portal/apps.json` → `/config/apps.json` (ro) | Status API, captive check, admin panel + API, supervisor |
 | `llm` | `ghcr.io/ggml-org/llama.cpp:server-b12602` | 8080 | `models` → `/models` | Shared model, **only with profile `llm`** (R6S) |
-| `darklight` | `ghcr.io/jessewolcott/airplanemode-darklight:0.3.1` | 8000 | (none) | Text adventure (uses LLM) |
+| `darklight` | `ghcr.io/jessewolcott/airplanemode-darklight:0.3.2` | 8000 | (none) | Text adventure (uses LLM) |
 | `drop` | `...-drop:0.2.2` | 8000 | `drop-data` | File/notes sharing. Asks admin for session checks |
 | `cinema` | `...-cinema:0.1.2` | 8000 | `cinema-data` (posters) | Plays Drop's media, TV series since 0.1.1 (`DROP_URL=http://drop:8000`) |
-| `quickshot` | `...-quickshot:0.1.1` | 8000 | `quickshot-data` | Swipe feed over Drop's QuickShot folder. Admin deletes comments |
+| `quickshot` | `...-quickshot:0.1.2` | 8000 | `quickshot-data` | Swipe feed over Drop's QuickShot folder. Admin deletes comments |
 | `doom` | `...-doom:0.1.1` | 8000 (busybox httpd) | (none) | Static files: PrBoom+ in WebAssembly runs in the browser. Reads Drop WADs from the browser |
-| `guide` | `...-guide:0.1.1` | 8000 | `guide-data` (~260 MB Wikivoyage) | Offline travel guide (uses LLM) |
-| `gatechange` | `...-gatechange:0.1.2` | 8000 | (none) | Colour/number card game: rooms + long-poll + bots, in memory |
+| `guide` | `...-guide:0.1.2` | 8000 | `guide-data` (~260 MB Wikivoyage) | Offline travel guide (uses LLM) |
+| `gatechange` | `...-gatechange:0.1.3` | 8000 | (none) | Colour/number card game: rooms + long-poll + bots, in memory |
 | `passport` | `...-passport:0.1.2` | 8000 | (none) | Deck-builder card game, same room shape as gatechange |
 | `wayfarer` | `...-wayfarer:0.2.1` | 8000 | `wayfarer-data` (scores.json) | Trivia; question bank pre-built from the guide's ZIM and baked into the image |
-| `couch` | `...-couch:0.2.2` | 8000 | (none) | Therapist simulator (uses LLM, streams SSE); stores nothing |
+| `couch` | `...-couch:0.2.4` | 8000 | (none) | Therapist simulator (uses LLM, streams SSE); stores nothing |
 
 Internal service-to-service calls use Docker DNS names: apps → `http://llm:8080` (via
 `LLM_URL`), Drop/QuickShot → `http://admin:8000` (via `ADMIN_URL`) for

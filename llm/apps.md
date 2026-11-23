@@ -6,7 +6,7 @@ Authoritative rules: `docs/app-contract.md`. Background: decisions 0001, 0005, 0
 
 | id | Image tag | Uses LLM | Data volume | Talks to | Notes |
 |---|---|---|---|---|---|
-| `darklight` | `airplanemode-darklight:0.3.1` | yes (optional) | none | llm | Text adventures (three worlds), party mode |
+| `darklight` | `airplanemode-darklight:0.3.2` | yes (optional) | none | llm | Text adventures (three worlds), party mode |
 | `drop` | `airplanemode-drop:0.2.2` | no | `drop-data` | admin (`ADMIN_URL`) | Files/notes between devices. Folders, "downloads off" for the admin. `.wad` = `application/x-doom-wad` |
 | `cinema` | `airplanemode-cinema:0.1.2` | no | `cinema-data` (posters) | drop (`DROP_URL`) | Streams Drop's media straight from `/drop/api/files/<id>`. Declares `opens` |
 | `quickshot` | `airplanemode-quickshot:0.1.2` | no | `quickshot-data` (comments.json, stats.json) | drop, admin | Swipe feed over Drop's top-level `QuickShot` folder |
@@ -14,8 +14,8 @@ Authoritative rules: `docs/app-contract.md`. Background: decisions 0001, 0005, 0
 | `gatechange` | `airplanemode-gatechange:0.1.3` | no | none (rooms in memory) | none | Colour/number card game, rooms + long-poll + bots (decision 0016) |
 | `passport` | `airplanemode-passport:0.1.2` | no | none (rooms in memory) | none | Deck-builder, same room shape as gatechange |
 | `wayfarer` | `airplanemode-wayfarer:0.2.1` | no | `wayfarer-data` (scores.json) | guide (link only, from the browser) | Trivia bank pre-built from the guide's ZIM, shipped in the image. `TZ` sets the daily round |
-| `couch` | `airplanemode-couch:0.2.3` | yes (optional) | none (chat stays in the browser) | llm | Therapist simulator (six therapists), streams SSE; fixed safety check before the model |
-| `guide` | `airplanemode-guide:0.1.1` | yes (optional) | `guide-data` (~260 MB) | llm | Wikivoyage offline + "ask the guide" |
+| `couch` | `airplanemode-couch:0.2.4` | yes (optional) | none (chat stays in the browser) | llm | Therapist simulator (six therapists), streams SSE; fixed safety check before the model |
+| `guide` | `airplanemode-guide:0.1.2` | yes (optional) | `guide-data` (~260 MB) | llm | Wikivoyage offline + "ask the guide" |
 
 Images are `ghcr.io/jessewolcott/airplanemode-<id>:<semver>`, built for arm64 (+amd64) by
 each app repo's CI on a `v*` tag. Pushing release tags publishes images, so ask before doing it.

@@ -170,14 +170,14 @@ Done and pushed (CI green):
   (prunes old `.bad-*` copies). Screenshots retaken after these changes. Checked in headless
   Chromium at phone and desktop size, and by Jesse on a real phone against the local dev stack
   (looked good); not yet on the R6S.
-- **Current releases** (pinned in `compose.yaml`): Dark Light 0.3.1, Drop 0.2.2, Guide 0.1.1,
+- **Current releases** (pinned in `compose.yaml`): Dark Light 0.3.2, Drop 0.2.2, Guide 0.1.2,
   Cinema 0.1.2, QuickShot 0.1.2, Doom 0.1.1, Gate Change 0.1.3, Passport 0.1.2, Wayfarer 0.2.1,
-  The Couch 0.2.3.
+  The Couch 0.2.4.
 - Every repo has checked-in `llm/` notes ("how it's built", for LLMs and engineers), kept out of
   the images by `.dockerignore`. The code wins when they disagree; fix the notes.
 - GL.iNet lite profile without the model apps (decision 0017).
 - Shared model switched to Gemma 4 E2B after comparing six models (decision 0018); the three
-  model apps' prompts and checks retuned for it, with an eval in each repo (decision 0020).
+  model apps' prompts and checks retuned for it, with an eval in each repo (decision 0020). Released: Dark Light 0.3.2, Guide 0.1.2, The Couch 0.2.4.
 
 **No real hardware has been tested yet.** The R6S build is in progress. Parts:
 - NanoPi R6S 8 GB with the metal case,

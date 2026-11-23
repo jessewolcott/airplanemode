@@ -94,7 +94,7 @@ services:
   # Apps that need the model (darklight, guide, couch) run only with the "llm" profile.
   darklight:
     profiles: ["llm"]           # model app: not on the GL.iNet (lite) profile
-    image: ghcr.io/jessewolcott/airplanemode-darklight:0.3.1
+    image: ghcr.io/jessewolcott/airplanemode-darklight:0.3.2
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}
     mem_limit: ${DARKLIGHT_MEM:-256m}
@@ -143,7 +143,7 @@ services:
 
   guide:
     profiles: ["llm"]           # model app: not on the GL.iNet (lite) profile
-    image: ghcr.io/jessewolcott/airplanemode-guide:0.1.1
+    image: ghcr.io/jessewolcott/airplanemode-guide:0.1.2
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}
     volumes:
@@ -177,7 +177,7 @@ services:
   # The Couch: therapist simulator. Conversations stay in the browser; nothing is stored on the box.
   couch:
     profiles: ["llm"]           # model app: not on the GL.iNet (lite) profile
-    image: ghcr.io/jessewolcott/airplanemode-couch:0.2.3
+    image: ghcr.io/jessewolcott/airplanemode-couch:0.2.4
     environment:
       LLM_URL: ${LLM_URL-http://llm:8080}
     mem_limit: ${COUCH_MEM:-64m}

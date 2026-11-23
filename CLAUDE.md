@@ -9,7 +9,7 @@ their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airpla
 one-line installer is
 `../airplanemode-site`, live at https://airplanemode.xin (GitHub Pages, own domain; decisions
 0011, 0012, 0019).
-Start with `README.md`, then `docs/decisions/` (0001–0019). They explain *why* things are
+Start with `README.md`, then `docs/decisions/` (0001–0020). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
@@ -176,7 +176,8 @@ Done and pushed (CI green):
 - Every repo has checked-in `llm/` notes ("how it's built", for LLMs and engineers), kept out of
   the images by `.dockerignore`. The code wins when they disagree; fix the notes.
 - GL.iNet lite profile without the model apps (decision 0017).
-- Shared model switched to Gemma 4 E2B after comparing six models (decision 0018).
+- Shared model switched to Gemma 4 E2B after comparing six models (decision 0018); the three
+  model apps' prompts and checks retuned for it, with an eval in each repo (decision 0020).
 
 **No real hardware has been tested yet.** The R6S build is in progress. Parts:
 - NanoPi R6S 8 GB with the metal case,
@@ -187,8 +188,9 @@ Done and pushed (CI green):
 
 Open follow-ups:
 1. Work through `docs/testing.md` → *On the device: checklist* once hardware arrives.
-2. Recheck the apps' prompts on Gemma 4 E2B (decision 0018): Dark Light's model verbs override a
-   right keyword fallback; the Guide's answer check rejects "the guide doesn't cover this".
+2. Prompts rechecked on Gemma 4 E2B (decision 0020; each model app has an eval to rerun). Left:
+   the Guide still answers from a passage about another airport/route when the passages lack
+   the answer (12/66 samples): fix it in retrieval.
 3. Measure model tokens/s on the R6S (record it in a new decision), try the QAT Q4_0 build, and
    maybe spike RKLLM (NPU).
 4. Home VPN: bypass the tunnel automatically for hotel sign-in pages (decision 0010).

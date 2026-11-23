@@ -2,7 +2,7 @@
 
 Checked-in reference for LLMs and engineers who open this repo with no prior context
 (images are built from `admin/`, so none of this reaches an image). It describes the code as it is (snapshot: 2026-11-22, decisions
-0001-0019), with `file:line` pointers. If the code and this folder disagree, the code wins;
+0001-0020), with `file:line` pointers. If the code and this folder disagree, the code wins;
 fix this folder.
 
 ## Overview

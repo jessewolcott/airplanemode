@@ -28,3 +28,4 @@ rewriting history.
 | [0020](0020-prompts-on-gemma-4-e2b.md) | The model apps' prompts and checks retuned for Gemma 4 E2B, with an eval per app |
 | [0021](0021-whos-who.md) | Who's who: a name and a picture per device (MAC + cookie), kept by the admin service |
 | [0022](0022-rooms-sdk.md) | A shared Rooms SDK (`sdk/rooms`, `amrooms`) for multiplayer apps; Gate Change and Passport use it |
+| [0023](0023-sync-watch.md) | Sync Watch: watch parties in Cinema, every phone in step, anyone controls |

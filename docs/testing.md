@@ -127,6 +127,10 @@ Things only real hardware can prove. Tick them off here as they're verified.
       popup and a second browser show the same name (found by MAC through the DHCP lease), and
       the admin panel's device list shows it. Note whether iOS/Android rotate the hotspot's
       private MAC over a few days (the cookie keeps the name in that browser if they do).
+- [ ] **Sync Watch:** four to six phones in one Cinema watch party on the same film over the
+      hotspot. They stay within about a tenth of a second (listen with earbuds side by side);
+      pause and skip from any phone; up next moves everyone. Note whether the R6S keeps every
+      stream smooth, and what happens on iOS when the first play needs a tap.
 - [ ] **Data use:** downloading a known-size file on a phone shows up in the panel within a
       minute, under the right network name.
 - [ ] **Doom:** on an Android phone and an iPhone (home-screen web app), Layover starts, the

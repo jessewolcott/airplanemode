@@ -9,7 +9,7 @@ their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airpla
 one-line installer is
 `../airplanemode-site`, live at https://airplanemode.xin (GitHub Pages, own domain; decisions
 0011, 0012, 0019).
-Start with `README.md`, then `docs/decisions/` (0001–0022). They explain *why* things are
+Start with `README.md`, then `docs/decisions/` (0001–0023). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
@@ -180,14 +180,17 @@ Done and pushed (CI green):
   model apps' prompts and checks retuned for it, with an eval in each repo (decision 0020). Released: Dark Light 0.3.2, Guide 0.1.2, The Couch 0.2.4.
 - Who's who (decision 0021): name + emoji per device on the landing page, `GET/PUT/DELETE
   /api/me`, recognised by MAC (DHCP lease) and the `am_who` cookie; names in the admin's
-  device list. Plan agreed 2026-11-22 (`docs/app-ideas.md` "Planned"): next Sync Watch in
-  Cinema, Lost & found, First aid; later TV mode on the R6S's HDMI and Jellyfin on the hotel TV
+  device list. Plan agreed 2026-11-22 (`docs/app-ideas.md` "Planned"): next Lost & found,
+  First aid; later TV mode on the R6S's HDMI and Jellyfin on the hotel TV
   with Cinema as the remote.
 - Rooms SDK (decision 0022): `amrooms` in `sdk/rooms` (seats, tokens, presence, long-poll,
   driver, registry, `whois()`); CI runs its tests. Apps pin it in `requirements.txt` as the
   `rooms-vX.Y.Z` tag's tarball (`#subdirectory=sdk/rooms`); `rooms-v*` tags publish nothing.
   Released `rooms-v0.1.1` (0.1.1: only a seated person's polls keep a room alive). Gate Change and Passport moved onto it (seat names/emoji from who's
   who, rejoin from another browser); checked by tests and in the dev stack at phone size. Released: Gate Change 0.2.0, Passport 0.2.0.
+- Sync Watch (decision 0023): watch parties in Cinema (`Party` room, anyone controls, each
+  phone steers its own player by clock offset + `playbackRate`). Tested by unit/API tests and
+  with two browser contexts in the dev stack (within 0.1 s). Not released yet (Cinema 0.2.0).
 
 **No real hardware has been tested yet.** The R6S build is in progress. Parts:
 - NanoPi R6S 8 GB with the metal case,

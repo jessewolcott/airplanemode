@@ -30,7 +30,7 @@ In build order. Who's who and the Rooms SDK come first because the others lean o
 |---|---|---|---|---|
 | ~~**Who's who**~~ (platform) | **Done** (decision 0021): name + emoji per device on the landing page, `GET /api/me` for apps | Not yet used by any app; the Rooms SDK is the first | no | small |
 | ~~**Rooms SDK**~~ (platform) | **Done** (decision 0022): `amrooms` in `sdk/rooms`, installed from a pinned tag's tarball; Gate Change and Passport use it, with who's who names | Dark Light's party mode still has its own rooms | no | medium |
-| **Sync Watch** (in Cinema) | Host plays, pauses, seeks; every phone follows in lockstep, each on its own earbuds | Built on the Rooms SDK. Drift correction by nudging `playbackRate`, hard seek past ~1 s. Phones still play from the box, so 4–6 streams of one file is the load to test on the R6S | no | small–medium |
+| ~~**Sync Watch**~~ (in Cinema) | **Done** (decision 0023): watch parties, anyone plays/pauses/skips, phones in step by nudging `playbackRate` | 4–6 streams of one file is the load to test on the R6S | no | small–medium |
 | **Lost & found** | "Last seen 14:32" for every device that has left the hotspot, with names from Who's who | Admin service already sees DHCP leases and station lists; this keeps a short history. Admin-only by default (it's location data about people) | no | small |
 | **First aid & emergency** | WikiMed ZIM plus a hand-curated page per country: emergency numbers, embassies, "I need a doctor" in the local language | **No model, on purpose**: safety content must not be generated. Reuses the Travel Guide's ZIM reader. The curated data is checked into the repo and reviewed by hand | no | small–medium |
 

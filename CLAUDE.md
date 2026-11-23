@@ -171,7 +171,7 @@ Done and pushed (CI green):
   Chromium at phone and desktop size, and by Jesse on a real phone against the local dev stack
   (looked good); not yet on the R6S.
 - **Current releases** (pinned in `compose.yaml`): Dark Light 0.3.2, Drop 0.2.2, Guide 0.1.2,
-  Cinema 0.1.2, QuickShot 0.1.2, Doom 0.1.1, Gate Change 0.1.3, Passport 0.1.2, Wayfarer 0.2.1,
+  Cinema 0.1.2, QuickShot 0.1.2, Doom 0.1.1, Gate Change 0.2.0, Passport 0.2.0, Wayfarer 0.2.1,
   The Couch 0.2.4.
 - Every repo has checked-in `llm/` notes ("how it's built", for LLMs and engineers), kept out of
   the images by `.dockerignore`. The code wins when they disagree; fix the notes.
@@ -187,7 +187,7 @@ Done and pushed (CI green):
   driver, registry, `whois()`); CI runs its tests. Apps pin it in `requirements.txt` as the
   `rooms-vX.Y.Z` tag's tarball (`#subdirectory=sdk/rooms`); `rooms-v*` tags publish nothing.
   Released `rooms-v0.1.1` (0.1.1: only a seated person's polls keep a room alive). Gate Change and Passport moved onto it (seat names/emoji from who's
-  who, rejoin from another browser); checked by tests and in the dev stack at phone size.
+  who, rejoin from another browser); checked by tests and in the dev stack at phone size. Released: Gate Change 0.2.0, Passport 0.2.0.
 
 **No real hardware has been tested yet.** The R6S build is in progress. Parts:
 - NanoPi R6S 8 GB with the metal case,

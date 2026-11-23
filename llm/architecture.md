@@ -33,8 +33,8 @@ Defined in `compose.yaml`. Only `proxy` publishes a port.
 | `quickshot` | `...-quickshot:0.1.2` | 8000 | `quickshot-data` | Swipe feed over Drop's QuickShot folder. Admin deletes comments |
 | `doom` | `...-doom:0.1.1` | 8000 (busybox httpd) | (none) | Static files: PrBoom+ in WebAssembly runs in the browser. Reads Drop WADs from the browser |
 | `guide` | `...-guide:0.1.2` | 8000 | `guide-data` (~260 MB Wikivoyage) | Offline travel guide (uses LLM) |
-| `gatechange` | `...-gatechange:0.1.3` | 8000 | (none) | Colour/number card game: rooms + long-poll + bots, in memory |
-| `passport` | `...-passport:0.1.2` | 8000 | (none) | Deck-builder card game, same room shape as gatechange |
+| `gatechange` | `...-gatechange:0.2.0` | 8000 | (none) | Colour/number card game: rooms + long-poll + bots, in memory, on the Rooms SDK |
+| `passport` | `...-passport:0.2.0` | 8000 | (none) | Deck-builder card game, on the Rooms SDK like gatechange |
 | `wayfarer` | `...-wayfarer:0.2.1` | 8000 | `wayfarer-data` (scores.json) | Trivia; question bank pre-built from the guide's ZIM and baked into the image |
 | `couch` | `...-couch:0.2.4` | 8000 | (none) | Therapist simulator (uses LLM, streams SSE); stores nothing |
 

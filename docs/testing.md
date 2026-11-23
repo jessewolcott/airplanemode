@@ -123,6 +123,10 @@ Things only real hardware can prove. Tick them off here as they're verified.
 - [ ] **Devices:** the admin panel lists phones on the hotspot with names, and marks
       *this device*. Pausing one stops its internet but `http://airplane.mode:8080` still
       works on it; resuming brings it back. Also with the VPN on.
+- [ ] **Who's who:** pick a name on an iPhone in Safari; the same phone's captive-portal
+      popup and a second browser show the same name (found by MAC through the DHCP lease), and
+      the admin panel's device list shows it. Note whether iOS/Android rotate the hotspot's
+      private MAC over a few days (the cookie keeps the name in that browser if they do).
 - [ ] **Data use:** downloading a known-size file on a phone shows up in the panel within a
       minute, under the right network name.
 - [ ] **Doom:** on an Android phone and an iPhone (home-screen web app), Layover starts, the

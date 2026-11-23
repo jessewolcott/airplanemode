@@ -28,7 +28,7 @@ In build order. Who's who and the Rooms SDK come first because the others lean o
 
 | Item | What it is | Notes | Model | Size |
 |---|---|---|---|---|
-| **Who's who** (platform) | Each device picks a name and avatar once, on the landing page; every app can read it | Admin service stores it by MAC (it already sees device names). `GET /api/me` with the forwarded request, so no accounts. Feeds resume positions, scores, Rooms seats | no | small |
+| ~~**Who's who**~~ (platform) | **Done** (decision 0021): name + emoji per device on the landing page, `GET /api/me` for apps | Not yet used by any app; the Rooms SDK is the first | no | small |
 | **Rooms SDK** (platform) | Shared lobby, seats, rejoin, bot takeover and long-poll channel for multiplayer apps | Pulled out of Gate Change and Passport, which then move onto it. A small Python package vendored into each app (no extra container), identity from Who's who | no | medium |
 | **Sync Watch** (in Cinema) | Host plays, pauses, seeks; every phone follows in lockstep, each on its own earbuds | Built on the Rooms SDK. Drift correction by nudging `playbackRate`, hard seek past ~1 s. Phones still play from the box, so 4–6 streams of one file is the load to test on the R6S | no | small–medium |
 | **Lost & found** | "Last seen 14:32" for every device that has left the hotspot, with names from Who's who | Admin service already sees DHCP leases and station lists; this keeps a short history. Admin-only by default (it's location data about people) | no | small |

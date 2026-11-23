@@ -352,6 +352,45 @@ def test_devices_pause():
     assert c.post("/api/admin/devices/01:00:5e:00:00:01/pause", headers=H, json={"paused": True}).status_code == 400
 
 
+def test_whos_who():
+    from fastapi.testclient import TestClient as TC
+    main._leases["at"] = -1e9
+    pixel = {"X-Forwarded-For": "192.168.2.163"}           # Pixel-8's lease
+    a, b = TC(main.app), TC(main.app)                      # two browsers on the Pixel
+    me = ok(a.get("/api/me", headers=pixel))
+    assert me["known"] is False and me["id"] is None and "🦊" in me["avatars"]
+    assert a.cookies.get(main.WHO_COOKIE)                  # every browser gets a cookie
+    assert a.put("/api/me", json={"name": "Sam", "avatar": "🦊"}, headers=pixel).status_code == 403  # no header
+    for bad in [{"name": "  ", "avatar": "🦊"}, {"name": "x" * 21, "avatar": "🦊"},
+                {"name": "a\x07b", "avatar": "🦊"}, {"name": "Sam", "avatar": "💩"}]:
+        assert a.put("/api/me", json=bad, headers={**H, **pixel}).status_code == 400, bad
+    me = ok(a.put("/api/me", json={"name": "  Sam   the\tman ", "avatar": "🦊"}, headers={**H, **pixel}))
+    assert me["known"] and me["name"] == "Sam the man" and len(me["id"]) == 16, me
+    # the other browser on the same phone: found by MAC, not cookie
+    assert ok(b.get("/api/me", headers=pixel))["id"] == me["id"]
+    # the phone's random MAC changes (new IP, no lease): the first browser's cookie still knows Sam
+    assert ok(a.get("/api/me", headers={"X-Forwarded-For": "10.9.9.9"}))["name"] == "Sam the man"
+    # a different device is someone else
+    assert ok(TC(main.app).get("/api/me", headers={"X-Forwarded-For": "192.168.2.140"}))["known"] is False
+    # no lease at all (dev stack): the cookie alone works
+    d = TC(main.app)
+    ok(d.put("/api/me", json={"name": "Dev", "avatar": "🐙"}, headers={**H, "X-Forwarded-For": "172.18.0.1"}))
+    assert ok(d.get("/api/me"))["name"] == "Dev"
+    # an app's backend asks on the user's behalf, passing on the forwarded address
+    assert ok(c.get("/api/me", headers=pixel))["name"] == "Sam the man"
+    # the admin's device list shows the name
+    devs = ok(c.get("/api/admin/devices"))["devices"]
+    assert next(x["person"] for x in devs if x["name"] == "Pixel-8") == {"name": "Sam the man", "avatar": "🦊"}
+    assert next(x["person"] for x in devs if x["name"] == "iPhone") is None
+    # ids survive a restart (same secret, same links)
+    assert main._me(main.Store(main.store.path).data["who_links"]["mac:f8:0f:f9:77:88:99"])["id"] == me["id"]
+    # forget: gone from every browser on the phone
+    assert ok(b.delete("/api/me", headers={**H, **pixel}))["known"] is False
+    assert ok(a.get("/api/me", headers=pixel))["known"] is False
+    assert [p["name"] for p in main.store.data["people"].values()] == ["Dev"]
+    assert set(main.store.data["who_links"].values()) == set(main.store.data["people"])
+
+
 def test_data_use():
     reset_world()
     main.store.data["usage"] = {}

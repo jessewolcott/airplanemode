@@ -4,6 +4,9 @@ Public:
   GET  /api/status            internet state (online / captive / offline), how (ethernet / wifi),
                               sign-in link, what the box is doing (joining a saved network?)
   GET  /api/apps              the apps on the landing page (portal/apps.json minus the hidden ones)
+  GET  /api/me                who's who: {known, id, name, avatar} for this device, + the avatar list
+  PUT  /api/me                {name, avatar}               (X-AirplaneMode: 1 header required)
+  DELETE /api/me                                           (forget this device's name)
 Admin (password, cookie session):
   POST /api/admin/login       {password}
   POST /api/admin/logout
@@ -17,7 +20,7 @@ Admin (password, cookie session):
   POST /api/admin/hotspots    {radio, ssid, encryption, key}
   PUT  /api/admin/hotspots/{id} {ssid, encryption, key, disabled}
   DELETE /api/admin/hotspots/{id}
-  GET  /api/admin/devices                                   (DHCP leases + paused state)
+  GET  /api/admin/devices                                   (DHCP leases + paused state + who's who name)
   POST /api/admin/devices/{mac}/pause {paused}              (internet off for one device; box apps still work)
   GET  /api/admin/usage       data used per uplink network, and on the current one
   DELETE /api/admin/usage
@@ -481,6 +484,134 @@ async def app_switch(app_id: str, body: AppSwitch, _token: str = Depends(require
     return {"ok": True, "enabled": body.enabled}
 
 
+# ---------------- who's who: a name and an emoji per device, no accounts ----------------
+# A device is recognised by its MAC (its IP looked up in the DHCP leases), so every browser on
+# a phone gets the same name, and by a long-lived cookie as well, for when there's no lease
+# (dev stack, a laptop on Ethernet with a fixed IP) or the phone's random MAC changes.
+# people: {pid: {name, avatar, updated}}; who_links: {"mac:<mac>" | "tok:<cookie>": pid}.
+# Apps get "id": a hash of pid, so they never see MACs.
+WHO_COOKIE = "am_who"
+AVATARS = ["🦊", "🐼", "🐙", "🦉", "🐢", "🦁", "🐧", "🐝", "🦋", "🐳", "🦜", "🐨",
+           "🌵", "🌻", "🍄", "🌙", "⭐", "🔥", "🌊", "⛰️", "✈️", "🚂", "⛵", "🎈"]
+MAX_PEOPLE = 300
+NAME_MAX = 20
+_leases = {"at": -1e9, "by_ip": {}}
+
+
+class Me(BaseModel):
+    name: str
+    avatar: str
+
+
+def check_name(name):
+    name = " ".join(name.split())  # trims and folds runs of spaces, tabs, newlines
+    if not name or any(ord(ch) < 32 or 0x7f <= ord(ch) < 0xa0 for ch in name):
+        raise HTTPException(400, "Pick a name.")
+    if len(name) > NAME_MAX:
+        raise HTTPException(400, f"Keep the name to {NAME_MAX} characters.")
+    return name
+
+
+async def mac_for(ip):
+    """The MAC holding a DHCP lease for this IP, or None. Leases are cached for 10 s; a miss
+    refreshes at most every 3 s, so a phone that just joined is found quickly."""
+    if not ip:
+        return None
+    age = time.monotonic() - _leases["at"]
+    if age > 10 or (ip not in _leases["by_ip"] and age > 3):
+        try:
+            devs = await router.devices()
+            _leases["by_ip"] = {d["ip"]: d["mac"] for d in devs if d.get("ip") and d.get("mac")}
+        except RouterError:
+            _leases["by_ip"] = {}
+        _leases["at"] = time.monotonic()
+    return _leases["by_ip"].get(ip)
+
+
+def _who_token(request):
+    tok = request.cookies.get(WHO_COOKIE) or ""
+    return tok if re.fullmatch(r"[A-Za-z0-9_-]{20,64}", tok) else None
+
+
+def _person_id(pid):
+    secret = store.data.get("who_secret")
+    if not secret:  # made once per box, so ids stay the same across restarts
+        secret = store.data["who_secret"] = secrets.token_hex(16)
+        store.save()
+    return hmac.new(secret.encode(), pid.encode(), "sha256").hexdigest()[:16]
+
+
+async def _who(request, response):
+    """(pid or None, link keys for this caller). Sets the cookie if the browser has none."""
+    tok = _who_token(request)
+    if not tok:
+        tok = secrets.token_urlsafe(24)
+        response.set_cookie(WHO_COOKIE, tok, httponly=True, samesite="lax", max_age=365 * 86400, path="/")
+    mac = await mac_for(client_ip(request))
+    keys = ([f"mac:{mac}"] if mac else []) + [f"tok:{tok}"]
+    links, people = store.data.setdefault("who_links", {}), store.data.setdefault("people", {})
+    pid = next((links[k] for k in keys if links.get(k) in people), None)
+    if pid and any(links.get(k) != pid for k in keys):  # new browser or new random MAC: same person
+        links.update({k: pid for k in keys})
+        store.save()
+    return pid, keys
+
+
+def _me(pid):
+    p = store.data.get("people", {}).get(pid) if pid else None
+    if not p:
+        return {"known": False, "id": None, "name": None, "avatar": None}
+    return {"known": True, "id": _person_id(pid), "name": p["name"], "avatar": p["avatar"]}
+
+
+def _require_header(request):
+    if request.headers.get("x-airplanemode") != "1":  # blocks cross-site form posts
+        raise HTTPException(403, "Missing request header.")
+
+
+@app.get("/api/me")
+async def get_me(request: Request, response: Response):
+    """Who is asking: {known, id, name, avatar}. Apps' backends may call this on
+    http://admin:8000 passing on the request's X-Forwarded-For and the am_who cookie."""
+    pid, _ = await _who(request, response)
+    return {**_me(pid), "avatars": AVATARS}
+
+
+@app.put("/api/me")
+async def put_me(body: Me, request: Request, response: Response):
+    _require_header(request)
+    name = check_name(body.name)
+    if body.avatar not in AVATARS:
+        raise HTTPException(400, "Pick one of the pictures.")
+    pid, keys = await _who(request, response)
+    people, links = store.data["people"], store.data["who_links"]
+    pid = pid or secrets.token_hex(8)
+    people[pid] = {"name": name, "avatar": body.avatar, "updated": time.time()}
+    links.update({k: pid for k in keys})
+    if len(people) > MAX_PEOPLE:  # forget the people who haven't changed their name for longest
+        for old in sorted(people, key=lambda p: people[p].get("updated", 0))[:len(people) - MAX_PEOPLE]:
+            del people[old]
+        store.data["who_links"] = {k: v for k, v in links.items() if v in people}
+    store.save()
+    return _me(pid)
+
+
+@app.delete("/api/me")
+async def delete_me(request: Request, response: Response):
+    _require_header(request)
+    pid, _ = await _who(request, response)
+    if pid:
+        store.data["people"].pop(pid, None)
+        store.data["who_links"] = {k: v for k, v in store.data["who_links"].items() if v != pid}
+        store.save()
+    return _me(None)
+
+
+def person_for_mac(mac):
+    p = store.data.get("people", {}).get(store.data.get("who_links", {}).get(f"mac:{mac}", ""))
+    return {"name": p["name"], "avatar": p["avatar"]} if p else None
+
+
 # ---------------- admin: Wi-Fi ----------------
 class Scan(BaseModel):
     radio: str
@@ -607,7 +738,8 @@ def client_ip(request: Request):
 @app.get("/api/admin/devices")
 async def devices(request: Request, _=Depends(require_admin)):
     me = client_ip(request)
-    return {"devices": [dict(d, you=bool(me and d.get("ip") == me)) for d in await router.devices()]}
+    return {"devices": [dict(d, you=bool(me and d.get("ip") == me), person=person_for_mac(d["mac"]))
+                        for d in await router.devices()]}
 
 
 @app.post("/api/admin/devices/{mac}/pause")

@@ -413,7 +413,7 @@ $("#vpnForm").addEventListener("submit", e => { e.preventDefault(); busy($("#vpn
 async function loadDevices() {
   try {
     const { devices } = await api("GET", "/api/admin/devices");
-    $("#devList").innerHTML = devices.map(d => `<li><span>${esc(d.name || "Unnamed device")}${d.you ? '<span class="tag you">this device</span>' : ""}${d.paused ? '<span class="tag paused">paused</span>' : ""}
+    $("#devList").innerHTML = devices.map(d => `<li><span>${d.person ? `${esc(d.person.avatar)} <b>${esc(d.person.name)}</b> · ` : ""}${esc(d.name || "Unnamed device")}${d.you ? '<span class="tag you">this device</span>' : ""}${d.paused ? '<span class="tag paused">paused</span>' : ""}
         <span class="sub">${esc(d.ip || "not connected")} · ${esc(d.mac)}</span></span>
       <button type="button" data-mac="${esc(d.mac)}" data-paused="${d.paused ? 1 : 0}" data-name="${esc(d.name || d.mac)}" data-you="${d.you ? 1 : 0}">${d.paused ? "resume" : "pause"}</button></li>`).join("")
       || `<li class="note">No devices yet.</li>`;

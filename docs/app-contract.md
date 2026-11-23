@@ -117,6 +117,13 @@ is offered as is. Doom, for example, declares `"types": ["application/x-doom-wad
   sends them that cookie. To know whether the person using the app is the admin, call this
   from the app's backend (`http://admin:8000`), passing on only that cookie (check its format
   first), and cache the answer briefly. Drop does this.
+- `GET /api/me` (who's who, decision 0021): `{known, id, name, avatar}` for the person
+  using the device; `known: false` (and `id: null`) until they pick a name on the landing page.
+  `id` is stable per person on this box and never a MAC, so use it as the key for scores, seats
+  and resume positions; show `name` and `avatar` (an emoji). From the page, `fetch("/api/me")`
+  works as is. From the app's backend, call `http://admin:8000/api/me` passing on the
+  request's `X-Forwarded-For` header and the `am_who` cookie (check its format first). Don't
+  build your own name prompt; link to the landing page (`../`) if the person has no name yet.
 
 ## Adding the app to the box (in this repo)
 

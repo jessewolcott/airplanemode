@@ -16,6 +16,15 @@ the page everyone sees, including the offline-popup "sign-in" sheet. Assets: `ic
 still shows everything. Each app renders as a card link to `a.path`, with a monogram icon on
 `a.color`, plus name and description. Apps with `uses_llm` get the tag "uses the on-board model".
 
+### Who's who
+
+`loadMe()` fetches `/api/me` once. The header chip (`#who`) shows the avatar and name (only a
+👤 until a name is set). The "Who's this?" card (`#hello`, below the sign-in panels) shows
+while there's no name, unless *Not now* stored `am-who-skip` in `localStorage`. The dialog
+(`#whoDlg`) has the name input, the 24 avatars from the response, Save (`PUT /api/me` with
+`X-AirplaneMode: 1`) and *Forget me on this device* (`DELETE /api/me`). Errors show the
+server's `detail`. If the admin service is down the chip stays hidden.
+
 ### Status
 
 `check(refresh)` fetches `/api/status` (with `?refresh=1` when refreshing) on load and every 10 s.

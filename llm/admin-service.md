@@ -1,34 +1,33 @@
 # Admin service (`admin/main.py`)
 
-A single FastAPI app (~700 lines) plus two helper modules:
+A single FastAPI app (~850 lines) plus two helper modules:
 - `admin/router.py`: router backends (OpenWrt over ubus, and a mock). See [router-control.md](router-control.md).
 - `admin/vpn.py`: WireGuard config parser. See [vpn-devices-usage.md](vpn-devices-usage.md).
 - `admin/static/index.html`: the admin panel. See [frontends.md](frontends.md).
 
-The module docstring (`main.py:1-37`) lists most endpoints. It doesn't list `/api/apps`,
-`/api/admin/apps`, `/api/admin/apps/{id}` or `/api/admin/session`, which were added later
-(decision 0013).
+The module docstring (`main.py:1-40`) lists the endpoints.
 
 ## Layout of `main.py`
 
 | Lines | Part |
 |---|---|
-| 57-69 | Config from env vars |
-| 71-78 | `httpx.AsyncClient` + router backend selection |
-| 83 | `router_lock = asyncio.Lock()` |
-| 86-95 | `lifespan`: starts the supervisor task, flushes usage on shutdown. `FastAPI(docs_url=None, redoc_url=None, openapi_url=None)`, so there's no Swagger |
-| 98-100 | `RouterError` → HTTP 400 `{"detail": msg}` |
-| 104-166 | `Store`: `networks.json` |
-| 170-296 | `Supervisor` + `_supervise_forever` (see [supervisor.md](supervisor.md)) |
-| 300-364 | Status cache, `probe()`, `vpn_summary()`, `GET /api/status` |
-| 369-418 | Sessions, login/logout, `require_admin`, `/api/admin/session` |
-| 425-467 | App menu: `/api/apps`, `/api/admin/apps`, `PUT /api/admin/apps/{id}` |
-| 471-579 | Wi-Fi: wifi overview, scan, upstream join/leave, autojoin, forget, hotspots |
-| 583-603 | Devices + pause |
-| 607-620 | Data use |
-| 624-660 | Home VPN |
-| 664-695 | Mock-only endpoints (`ROUTER_BACKEND=mock`) |
-| 698 | `app.mount("/admin", StaticFiles(directory=static, html=True))` |
+| 60-75 | Config from env vars |
+| 79-86 | `httpx.AsyncClient` + router backend selection |
+| 91 | `router_lock = asyncio.Lock()` |
+| 94-103 | `lifespan`: starts the supervisor task, flushes usage on shutdown. `FastAPI(docs_url=None, redoc_url=None, openapi_url=None)`, so there's no Swagger |
+| 106-108 | `RouterError` → HTTP 400 `{"detail": msg}` |
+| 111-174 | `Store`: `networks.json` |
+| 177-304 | `Supervisor` + `_supervise_forever` (see [supervisor.md](supervisor.md)) |
+| 307-372 | Status cache, `probe()`, `vpn_summary()`, `GET /api/status` |
+| 375-426 | Sessions, login/logout, `require_admin`, `/api/admin/session` |
+| 429-484 | App menu: `/api/apps`, `/api/admin/apps`, `PUT /api/admin/apps/{id}` |
+| 487-612 | Who's who: `/api/me` (decision 0021) |
+| 615-724 | Wi-Fi: wifi overview, scan, upstream join/leave, autojoin, forget, hotspots |
+| 727-749 | Devices + pause |
+| 752-766 | Data use |
+| 769-806 | Home VPN |
+| 809-841 | Mock-only endpoints (`ROUTER_BACKEND=mock`) |
+| 844 | `app.mount("/admin", StaticFiles(directory=static, html=True))` |
 
 ## Configuration (env vars read by `main.py`)
 
@@ -125,6 +124,22 @@ Pydantic body errors are 422 (the panel shows "Check the fields and try again.")
 |---|---|---|
 | `GET /api/status` | `?refresh=1` bypasses the cache | Internet state for the landing page. See [supervisor.md](supervisor.md#apistatus). Never returns keys or the VPN endpoint. |
 | `GET /api/apps` | none | `installed_apps()` minus `hidden_apps`. Reads `APPS_FILE` on every call. A missing file gives `[]`, a bad file logs and gives `[]`. Only dict entries with a string `id` are kept. |
+| `GET /api/me` | none | Who's who (decision 0021): `{known, id, name, avatar, avatars}`. Sets the `am_who` cookie if missing |
+| `PUT /api/me` | `{name, avatar}`, header `X-AirplaneMode: 1` | `check_name` (whitespace folded, 1–20 chars, no control chars), avatar must be in `AVATARS`. 403 without the header, 400 on bad input |
+| `DELETE /api/me` | header `X-AirplaneMode: 1` | Forgets the person and every link to them |
+
+### Who's who (`main.py`, section after the app menu)
+
+- `store.data["people"] = {pid: {name, avatar, updated}}` (max 300, oldest `updated` dropped)
+  and `store.data["who_links"] = {"mac:<mac>" | "tok:<am_who cookie>": pid}`, in `networks.json`.
+- `_who(request, response)`: the caller's keys are the MAC whose DHCP lease holds
+  `client_ip(request)` (`mac_for`, leases cached 10 s, a miss refreshes after 3 s; a
+  `RouterError` means "no MAC") plus the `am_who` cookie (`HttpOnly`, `SameSite=Lax`, 1 year).
+  The first key linked to a live person wins, and the other keys are linked to them too, so a
+  second browser or a new random MAC picks up the same person.
+- Apps get `id = HMAC(who_secret, pid)[:16]`, never MACs. `who_secret` is made once per box.
+- `GET /api/admin/devices` adds `person: {name, avatar} | null` per device (`person_for_mac`).
+- No router changes, so no `router_lock`.
 
 ### Admin: app menu
 
@@ -154,7 +169,7 @@ Pydantic body errors are 422 (the panel shows "Check the fields and try again.")
 
 | Method + path | Body | Does |
 |---|---|---|
-| `GET /api/admin/devices` | none | `router.devices()` with `you: true` where the lease IP equals `client_ip(request)` (the last `X-Forwarded-For` entry, else the socket peer) |
+| `GET /api/admin/devices` | none | `router.devices()` with `you: true` where the lease IP equals `client_ip(request)` (the last `X-Forwarded-For` entry, else the socket peer), and `person` from who's who |
 | `POST /api/admin/devices/{mac}/pause` | `{paused}` | Under the lock: `set_device_paused(mac, paused)` (`check_mac` in the backend, 400 on multicast or a bad format) |
 | `GET /api/admin/usage` | none | `{"current": supervisor.session, "linked": bool, "networks": [{name, rx, tx, first, last}]}`, newest first |
 | `DELETE /api/admin/usage` | none | Clears `usage`, zeroes the current session (keeps its name, resets `since`), saves |

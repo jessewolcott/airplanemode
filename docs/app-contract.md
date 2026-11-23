@@ -42,6 +42,27 @@ box is three small edits in this repo and nothing else.
    ```
 
 9. **Runs its own tests in CI** before publishing the image.
+10. **A home button at the top right of every screen.** It's the one obvious way back to the
+    AirplaneMode menu, so it's the same in every app:
+
+    ```html
+    <a class="am-home" href="../" aria-label="AirplaneMode home" title="AirplaneMode home">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>
+      </svg>
+    </a>
+    ```
+
+    - At least 44 × 44 px, top right, clear of the notch (`env(safe-area-inset-*)`), with a
+      visible focus ring. Colours come from the app's theme.
+    - On every screen: menus, lobbies, games in progress, players and full-screen feeds. Put it
+      in the header's right end where there is one, and `position: fixed` where there isn't. It
+      must not cover the app's own controls.
+    - `href="../"` from a page at the app's root (`/<id>/`); one `../` more per level deeper.
+    - It replaces any older "AirplaneMode" text link. A brand/logo link goes to the app's own
+      start screen, not out of the app.
+    - If leaving would lose progress the app can't restore, ask first (`confirm`). Otherwise just go.
 
 ## Using the shared model
 

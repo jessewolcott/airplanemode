@@ -125,7 +125,7 @@ flowchart LR
 | **USB-C power, 5 V / 3 A or better** | the R6S plus two adapters | A good USB-C PD power bank works too. |
 | *Optional:* short USB extension cable | moves an adapter off the metal case | Better range, and keeps the two adapters apart. |
 
-**The build this project is being tested on** (bought, not yet verified: see
+**The build this project is being tested on** (in progress, not yet verified: see
 [docs/testing.md](docs/testing.md)):
 
 | Part | Job |

@@ -152,7 +152,7 @@ Done and pushed (CI green):
 - GL.iNet lite profile without the model apps (decision 0017).
 - Shared model switched to Gemma 4 E2B after comparing six models (decision 0018).
 
-**No real hardware has been tested yet.** The R6S and adapters aren't bought. Parts:
+**No real hardware has been tested yet.** The R6S build is in progress. Parts:
 - NanoPi R6S 8 GB with the metal case,
 - ALFA AWUS036ACHM (MT7610U) for upstream,
 - ALFA AWUS036ACM (MT7612U) for the hotspot,

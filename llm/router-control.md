@@ -16,7 +16,7 @@ consequences), but it can't run commands, read files, or touch system, SSH or pa
 Both implement the same async methods:
 
 `overview, upstream_status, ethernet_status, portal_mode, set_offline_portal, scan, join,
-leave, save_hotspot, add_hotspot, delete_hotspot, devices, set_device_paused,
+leave, save_hotspot, add_hotspot, delete_hotspot, devices, stations, set_device_paused,
 uplink_counters, vpn_config, vpn_status, set_vpn, set_vpn_enabled, remove_vpn`, plus `name`
 (`"openwrt"`/`"mock"`). The mock adds `internet()` and `clear_portal()`.
 
@@ -102,6 +102,7 @@ exists, and are removed with the VPN.
 | `add_hotspot(radio, ssid, enc, key)` | Validates, the radio must exist. `uci add wireless wifi-iface {device, mode ap, network lan, ssid, encryption, key?}` (anonymous section) and applies. Returns the new section name |
 | `delete_hotspot(hid)` | The section must have `mode ap`. Lockout guard, `uci delete`, apply |
 | `devices()` | `luci-rpc getDHCPLeases {family: 4}` (5 s). Failure means "luci-rpc API isn't available (is LuCI installed?)". Paused MACs come from firewall sections with `BLOCK_PREFIX` and `src_mac`. The result merges leases + paused-without-lease, sorted named-first then by name/MAC. Fields `mac, ip, name, expires, paused` |
+| `stations()` | `iwinfo devices`, `iwinfo info` per device (keep mode Master/ap), `iwinfo assoclist` (5 s each) → `[{mac, signal}]`. Raises if AP interfaces exist but none answered (lost & found, decision 0025) |
 | `set_device_paused(mac, paused)` | `check_mac`. Computes the wanted set and returns if unchanged. `_sync_blocks(want, vpn_zone_exists)`, apply firewall |
 | `_sync_blocks(paused, vpn_zone)` | Wants one rule per MAC per zone (`wan`, plus `vpn` if the zone exists): `{name "AirplaneMode pause <mac>", src lan, dest <zone>, src_mac, proto all, target REJECT}`. Deletes `airplanemode_block_*` sections not wanted, then creates/updates the wanted ones via `_put` |
 | `uplink_counters()` | For `ethernet`→`WAN_IFACE` and `wifi`→`wwan`: `network.interface status`. If up with a device: `network.device status {name}` → `statistics.rx_bytes/tx_bytes`. Returns only the uplinks that are up |
@@ -143,10 +144,10 @@ Installed to `/usr/share/rpcd/acl.d/airplanemode.json` by `router-setup.sh`, gro
 
 | | ubus objects/methods | uci configs |
 |---|---|---|
-| read | `uci`: get, changes · `iwinfo`: info, scan, devices · `network.interface`: status, dump · `network.device`: status · `luci-rpc`: getDHCPLeases · `luci.wireguard`: getWgInstances | wireless, network, firewall, dhcp |
+| read | `uci`: get, changes · `iwinfo`: info, scan, devices, assoclist · `network.interface`: status, dump · `network.device`: status · `luci-rpc`: getDHCPLeases · `luci.wireguard`: getWgInstances | wireless, network, firewall, dhcp |
 | write | `uci`: set, add, delete, apply, revert | wireless, network, firewall, dhcp |
 
-Not every allowed call is used today (`uci changes`/`revert`, `iwinfo devices`,
+Not every allowed call is used today (`uci changes`/`revert`,
 `network.interface dump` are spare). Everything else is denied, including `file`, `system`,
 `rc`, other uci configs (`system`, `rpcd`, `dropbear`), `luci.wireguard generateKeyPair`,
 `network.device set_state`, `luci-rpc getBoardJSON`. The live test checks 11 such refusals.

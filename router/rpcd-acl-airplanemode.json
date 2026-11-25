@@ -4,7 +4,7 @@
 		"read": {
 			"ubus": {
 				"uci": [ "get", "changes" ],
-				"iwinfo": [ "info", "scan", "devices" ],
+				"iwinfo": [ "info", "scan", "devices", "assoclist" ],
 				"network.interface": [ "status", "dump" ],
 				"network.device": [ "status" ],
 				"luci-rpc": [ "getDHCPLeases" ],

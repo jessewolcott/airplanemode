@@ -76,6 +76,24 @@ The private key lives only in the router's uci config. No API response contains 
 - The admin panel asks for confirmation before you pause your own device.
 - *Untested on hardware:* real leases and real pause behaviour (including with the VPN on).
 
+## Lost & found (decision 0025)
+
+- `router.stations()`: `iwinfo devices` → `iwinfo info` per device, keeping mode `Master`/`ap`
+  (never the upstream STA) → `iwinfo assoclist` → `[{mac, signal}]`. Raises `RouterError` when
+  there are AP interfaces but none answered (e.g. the old ACL without `assoclist`), so a failure
+  never reads as "everyone left". Mock: `devices_list` minus `router.away` (set by
+  `POST /api/mock/world {"away": [name or MAC]}`).
+- `Presence.track()` (`main.py`) runs after every supervisor tick (outside `router_lock`: reads
+  only) and on each mock-world call. Store key `seen`: `{mac: {since, last, here, host}}`. Back
+  within `SEEN_REJOIN` (120 s) keeps `since`. Pruned to `SEEN_KEEP_DAYS` (14) and `SEEN_MAX`
+  (300) by `last`. Saved via `save_soon()` (≤ every 5 min). On error: `presence.ok = False`,
+  history untouched.
+- `GET /api/admin/devices` merges leases with `seen` (devices whose lease expired come back with
+  `ip: null` and their remembered `host` name) and adds `here` (`null` until a sample worked),
+  `since` (only while here) and `last_seen`; order: here (by name), left (latest first), rest.
+  Also returns `tracking` and `keep_days`. `DELETE /api/admin/devices/history` clears `seen`.
+- Admin only: nothing else exposes it (location data about people).
+
 ## Data use
 
 See [supervisor.md](supervisor.md#data-use-counting-count_usage-mainpy180-207) for the counting.

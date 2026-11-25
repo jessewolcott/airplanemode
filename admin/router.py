@@ -433,6 +433,34 @@ class OpenWrtRouter:
             out[mac] = {"mac": mac, "ip": None, "name": "", "expires": None, "paused": True}
         return sorted(out.values(), key=lambda d: (d["name"] == "", d["name"].lower(), d["mac"]))
 
+    async def stations(self):
+        """Who is on this box's own hotspots right now: the Wi-Fi association list of every
+        access-point interface (not the upstream one). Raises RouterError if no hotspot
+        answered, so "can't tell" never looks like "everyone left"."""
+        devs = (await self.call("iwinfo", "devices", {}, timeout=5)).get("devices") or []
+        out, aps, answered = {}, 0, 0
+        for dev in devs:
+            try:
+                info = await self.call("iwinfo", "info", {"device": dev}, timeout=5)
+            except RouterError:
+                continue
+            if (info.get("mode") or "").lower() not in ("master", "ap"):
+                continue  # the upstream (client) interface
+            aps += 1
+            try:
+                res = await self.call("iwinfo", "assoclist", {"device": dev}, timeout=5)
+            except RouterError:
+                continue
+            answered += 1
+            for s in res.get("results") or []:
+                mac = (s.get("mac") or "").lower()
+                if mac:
+                    out[mac] = {"mac": mac, "signal": s.get("signal")}
+        if aps and not answered:
+            raise RouterError("The hotspots didn't say who is connected (is iwinfo assoclist allowed? "
+                              "Re-run scripts/router-setup.sh).")
+        return list(out.values())
+
     async def _sync_blocks(self, paused, vpn_zone):
         """Make the pause rules match `paused` (MACs), for wan and, if it exists, the VPN zone."""
         fw = await self._uci("firewall")
@@ -576,6 +604,7 @@ class MockRouter:
         self.in_range = {n["ssid"] for n in self.NEARBY}  # which nearby networks are visible
         self.vpn = None                # {"cfg": parsed config, "enabled": bool}
         self.paused = set()
+        self.away = set()              # MACs of pretend devices that left the hotspot
         self.counters = {"ethernet": {"rx": 0, "tx": 0}, "wifi": {"rx": 0, "tx": 0}}
         self.devices_list = [
             {"mac": "3c:22:fb:10:20:30", "ip": "192.168.2.140", "name": "iPhone"},
@@ -654,6 +683,10 @@ class MockRouter:
     async def devices(self):
         out = [dict(d, expires=43000, paused=d["mac"] in self.paused) for d in self.devices_list]
         return sorted(out, key=lambda d: (d["name"] == "", d["name"].lower(), d["mac"]))
+
+    async def stations(self):
+        """Every pretend device is on the hotspot unless it has walked off (`away`)."""
+        return [{"mac": d["mac"], "signal": -50} for d in self.devices_list if d["mac"] not in self.away]
 
     async def set_device_paused(self, mac, paused):
         mac = check_mac(mac)

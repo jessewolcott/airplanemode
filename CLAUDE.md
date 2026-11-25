@@ -9,7 +9,7 @@ their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airpla
 one-line installer is
 `../airplanemode-site`, live at https://airplanemode.xin (GitHub Pages, own domain; decisions
 0011, 0012, 0019).
-Start with `README.md`, then `docs/decisions/` (0001–0023). They explain *why* things are
+Start with `README.md`, then `docs/decisions/` (0001–0025). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
@@ -50,7 +50,7 @@ docker compose --env-file hardware/glinet.env config --quiet
 ```
 
 Simulate travel in dev: `POST /api/mock/world` with `{"in_range": []}`,
-`{"in_range": ["CoffeeCorner"]}` or `{"ethernet": true}`. The mock hotel network with a
+`{"in_range": ["CoffeeCorner"]}`, `{"ethernet": true}` or `{"away": ["Pixel-8"]}` (lost & found). The mock hotel network with a
 sign-in page is `Harbor_Hotel_Guest`.
 
 VS Code tasks (`.vscode/tasks.json`) wrap all of the above.
@@ -183,8 +183,7 @@ Done and pushed (CI green):
   model apps' prompts and checks retuned for it, with an eval in each repo (decision 0020). Released: Dark Light 0.3.2, Guide 0.1.2, The Couch 0.2.4.
 - Who's who (decision 0021): name + emoji per device on the landing page, `GET/PUT/DELETE
   /api/me`, recognised by MAC (DHCP lease) and the `am_who` cookie; names in the admin's
-  device list. Plan agreed 2026-11-22 (`docs/app-ideas.md` "Planned"): next Lost & found,
-  First aid; later TV mode on the R6S's HDMI and Jellyfin on the hotel TV
+  device list. Plan agreed 2026-11-22 (`docs/app-ideas.md` "Planned"): next the default hotspot name/password and known networks (agreed 2026-11-24), then First aid; later TV mode on the R6S's HDMI and Jellyfin on the hotel TV
   with Cinema as the remote.
 - Rooms SDK (decision 0022): `amrooms` in `sdk/rooms` (seats, tokens, presence, long-poll,
   driver, registry, `whois()`); CI runs its tests. Apps pin it in `requirements.txt` as the
@@ -197,7 +196,10 @@ Done and pushed (CI green):
 - Performance pass (decision 0024): model pinned to the A76 cores (`LLM_CPUS=4-7`), Caddy
   sends Drop's files (`X-Accel-Redirect`, ~5x less CPU in dev), `encode zstd gzip`,
   `LLM_CACHE_RAM` setting, QAT Q4_0 one line away in the R6S profile. Prompt caching, warm-up
-  and asset caching were checked and already fine. Released: Drop 0.2.3.
+  and asset caching were checked and already fine.
+- Lost & found (decision 0025): admin panel *Devices* → *Lost & found*, "last seen" per device
+  from the hotspots' station lists (`iwinfo assoclist`, new in the ACL: re-run
+  `router-setup.sh`), kept 14 days in the store's `seen`. Admin only. Mock: `{"away": ["Pixel-8"]}`. Released: Drop 0.2.3.
 
 **No real hardware has been tested yet.** The R6S build is in progress. Parts:
 - NanoPi R6S 8 GB with the metal case,

@@ -74,7 +74,8 @@ passwords, joining an open network and a WPA2 network with MAC clone, the `wwan`
 plus firewall zone, leaving, saving/adding/deleting hotspots, the lockout guard, and changes
 being committed. Since decision 0010 it also covers the WireGuard interface, peer, zone and
 forwarding, device pause rules, and the three extra read calls (DHCP leases, WireGuard status,
-device counters), and checks 11 out-of-scope calls are refused. In an unprivileged container netifd itself hangs, so live link status and
+device counters), and checks 11 out-of-scope calls are refused. Since decision 0025 (run
+2026-11-24) it also reads the hotspots' station lists (`iwinfo assoclist`). In an unprivileged container netifd itself hangs, so live link status and
 Wi-Fi reloads can't be checked there.
 
 ## On the device: checklist
@@ -127,6 +128,10 @@ Things only real hardware can prove. Tick them off here as they're verified.
       popup and a second browser show the same name (found by MAC through the DHCP lease), and
       the admin panel's device list shows it. Note whether iOS/Android rotate the hotspot's
       private MAC over a few days (the cookie keeps the name in that browser if they do).
+- [ ] **Lost & found:** re-run `scripts/router-setup.sh` (new `iwinfo assoclist` permission). A
+      phone on the hotspot shows *here since*; switch its Wi-Fi off and within a minute it moves
+      to *Lost & found* with the right *last seen* time. Check `iwinfo` reports the hotspot
+      interfaces as mode *Master* on FriendlyWrt, and whether a locked phone stays listed as here.
 - [ ] **Sync Watch:** four to six phones in one Cinema watch party on the same film over the
       hotspot. They stay within about a tenth of a second (listen with earbuds side by side);
       pause and skip from any phone; up next moves everyone. Note whether the R6S keeps every

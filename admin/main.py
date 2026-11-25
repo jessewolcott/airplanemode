@@ -20,7 +20,9 @@ Admin (password, cookie session):
   POST /api/admin/hotspots    {radio, ssid, encryption, key}
   PUT  /api/admin/hotspots/{id} {ssid, encryption, key, disabled}
   DELETE /api/admin/hotspots/{id}
-  GET  /api/admin/devices                                   (DHCP leases + paused state + who's who name)
+  GET  /api/admin/devices                                   (DHCP leases + paused state + who's who name
+                                                             + lost & found: here / since / last_seen)
+  DELETE /api/admin/devices/history                         (clear lost & found)
   POST /api/admin/devices/{mac}/pause {paused}              (internet off for one device; box apps still work)
   GET  /api/admin/usage       data used per uplink network, and on the current one
   DELETE /api/admin/usage
@@ -294,6 +296,56 @@ class Supervisor:
 supervisor = Supervisor()
 
 
+# ---------------- lost & found: when each device was last on the hotspot ----------------
+SEEN_KEEP_DAYS = 14     # forget a device this long after it was last seen
+SEEN_MAX = 300
+SEEN_REJOIN = 120       # back within this many seconds = the same visit (a blip, not a new arrival)
+
+
+class Presence:
+    """Who is on the hotspot, from the router's Wi-Fi station lists, sampled every supervisor
+    tick. Kept per MAC in the store: `since` (this visit began), `last` (last seen), `here`.
+    Location data about people: only the admin sees it (decision 0025)."""
+
+    def __init__(self):
+        self.ok = None          # did the last sample work? None = not tried yet
+
+    async def track(self, now=None):
+        now = time.time() if now is None else now
+        try:
+            here = {s["mac"] for s in await router.stations()}
+        except RouterError as e:
+            if self.ok is not False:
+                log.warning("lost & found: %s", e)
+            self.ok = False
+            return
+        self.ok = True
+        try:  # remember the DHCP name, for when the lease is gone
+            hosts = {d["mac"]: d.get("name") for d in await router.devices()}
+        except RouterError:
+            hosts = {}
+        seen = store.data.setdefault("seen", {})
+        for mac in here:
+            e = seen.setdefault(mac, {"since": now, "last": now})
+            if not e.get("here") and now - e.get("last", 0) > SEEN_REJOIN:
+                e["since"] = now
+            e["here"], e["last"] = True, now
+            if hosts.get(mac):
+                e["host"] = hosts[mac]
+        for mac, e in seen.items():
+            if mac not in here:
+                e["here"] = False
+        cutoff = now - SEEN_KEEP_DAYS * 86400
+        keep = sorted((m for m, e in seen.items() if e.get("last", 0) >= cutoff),
+                      key=lambda m: -seen[m]["last"])[:SEEN_MAX]
+        store.data["seen"] = {m: seen[m] for m in keep}
+        store._dirty = True
+        store.save_soon()
+
+
+presence = Presence()
+
+
 async def _supervise_forever():
     await asyncio.sleep(3)
     while True:
@@ -301,6 +353,10 @@ async def _supervise_forever():
             await supervisor.tick()
         except Exception as e:  # never let the loop die
             log.warning("supervisor tick failed: %s", e)
+        try:
+            await presence.track()
+        except Exception as e:
+            log.warning("lost & found failed: %s", e)
         await asyncio.sleep(SUPERVISE_INTERVAL)
 
 
@@ -737,9 +793,34 @@ def client_ip(request: Request):
 
 @app.get("/api/admin/devices")
 async def devices(request: Request, _=Depends(require_admin)):
+    """DHCP leases plus lost & found: every device seen on the hotspot in the last
+    SEEN_KEEP_DAYS, with `here`, `since` and `last_seen` (null while there's no station data)."""
     me = client_ip(request)
-    return {"devices": [dict(d, you=bool(me and d.get("ip") == me), person=person_for_mac(d["mac"]))
-                        for d in await router.devices()]}
+    seen = store.data.get("seen", {})
+    tracked = presence.ok is True
+    out = {d["mac"]: dict(d) for d in await router.devices()}
+    for mac, e in seen.items():
+        if mac not in out:  # the lease is gone, but we saw it
+            out[mac] = {"mac": mac, "ip": None, "name": e.get("host") or "", "expires": None, "paused": False}
+    for mac, d in out.items():
+        e = seen.get(mac) or {}
+        d.update(you=bool(me and d.get("ip") == me), person=person_for_mac(mac),
+                 here=bool(e.get("here")) if tracked else None, since=e.get("since") if e.get("here") else None,
+                 last_seen=e.get("last"))
+        if not d["name"] and e.get("host"):
+            d["name"] = e["host"]
+    # here now (by name) first, then the ones that left (most recent first), then the rest
+    order = sorted(out.values(), key=lambda d: (d["name"] == "", d["name"].lower(), d["mac"]))
+    order.sort(key=lambda d: (0 if d["here"] else 1 if d["last_seen"] else 2, -(d["last_seen"] or 0) if not d["here"] else 0))
+    return {"devices": order, "tracking": tracked, "keep_days": SEEN_KEEP_DAYS}
+
+
+@app.delete("/api/admin/devices/history")
+async def forget_seen(_=Depends(require_admin)):
+    """Clear lost & found (who was here when). Devices still on the hotspot reappear next tick."""
+    store.data["seen"] = {}
+    store.save()
+    return {"ok": True}
 
 
 @app.post("/api/admin/devices/{mac}/pause")
@@ -827,18 +908,23 @@ if BACKEND == "mock":
     class MockWorld(BaseModel):
         ethernet: bool | None = None
         in_range: list[str] | None = None
+        away: list[str] | None = None   # device names or MACs that left the hotspot
 
     @app.post("/api/mock/world")
     async def mock_world(body: MockWorld):
-        """Simulate travel: plug/unplug Ethernet, change which networks are in range."""
+        """Simulate travel: plug/unplug Ethernet, change which networks are in range, walk
+        devices off the hotspot (lost & found)."""
         if body.ethernet is not None:
             router.ethernet = body.ethernet
         if body.in_range is not None:
             router.in_range = set(body.in_range)
+        if body.away is not None:
+            router.away = {d["mac"] for d in router.devices_list if d["mac"] in body.away or d["name"] in body.away}
         result = await supervisor.tick()
+        await presence.track()
         _bust()
         return {"ethernet": router.ethernet, "in_range": sorted(router.in_range),
-                "offline_popup": router.portal_on, "tick": result}
+                "away": sorted(router.away), "offline_popup": router.portal_on, "tick": result}
 
 
 app.mount("/admin", StaticFiles(directory=HERE / "static", html=True), name="admin")

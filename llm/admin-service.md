@@ -169,7 +169,8 @@ Pydantic body errors are 422 (the panel shows "Check the fields and try again.")
 
 | Method + path | Body | Does |
 |---|---|---|
-| `GET /api/admin/devices` | none | `router.devices()` with `you: true` where the lease IP equals `client_ip(request)` (the last `X-Forwarded-For` entry, else the socket peer), and `person` from who's who |
+| `GET /api/admin/devices` | none | `router.devices()` with `you: true` where the lease IP equals `client_ip(request)` (the last `X-Forwarded-For` entry, else the socket peer), and `person` from who's who; merged with lost & found (`here`, `since`, `last_seen`, plus devices whose lease expired), and `tracking`, `keep_days`. See [vpn-devices-usage.md](vpn-devices-usage.md#lost--found-decision-0025) |
+| `DELETE /api/admin/devices/history` | none | Clears lost & found (`seen`) |
 | `POST /api/admin/devices/{mac}/pause` | `{paused}` | Under the lock: `set_device_paused(mac, paused)` (`check_mac` in the backend, 400 on multicast or a bad format) |
 | `GET /api/admin/usage` | none | `{"current": supervisor.session, "linked": bool, "networks": [{name, rx, tx, first, last}]}`, newest first |
 | `DELETE /api/admin/usage` | none | Clears `usage`, zeroes the current session (keeps its name, resets `since`), saves |

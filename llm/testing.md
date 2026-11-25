@@ -37,6 +37,7 @@ What each test covers:
 | `test_wireguard_config_parsing` | Parser happy path (IPv6 endpoint, DNS search domain dropped). 7 bad configs rejected |
 | `test_vpn_api` | VPN CRUD. Keys never returned. `/api/status` vpn fields. VPN on behind a portal → offline. VPN off → captive. Enabling a missing VPN gives 400 |
 | `test_devices_pause` | `you` from X-Forwarded-For, pause/resume, multicast MAC gives 400 |
+| `test_lost_and_found` | `here` null before a sample; all here with `since`; one leaves → listed last with `last_seen`; a 1-minute blip keeps `since`, an 11-minute gap starts a new visit; expired lease still named from `host`; pruned after `SEEN_KEEP_DAYS`; refused station list keeps history and shows `here: null`; mock world `away` by name; clear history |
 | `test_data_use` | Baseline then deltas, Ethernet becomes current, counter reset handling, reset endpoint |
 | `test_apps_on_the_menu` | `/api/apps` filtering, 403 without the header, 404 for an unknown id, admin list, session endpoint with and without the cookie, a missing apps file gives `[]` |
 | `test_logout` | Logout → 401 |

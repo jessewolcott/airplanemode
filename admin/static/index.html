@@ -27,6 +27,7 @@
   section.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
   section.card > h2 { margin: 0 0 4px; font-size: 1.05rem; }
   section.card > p.lead { margin: 0 0 14px; color: var(--dim); font-size: .9rem; }
+  section.card > h3.sub-h { margin: 22px 0 4px; font-size: .95rem; }
   label { display: block; font-size: .8rem; color: var(--dim); margin-bottom: 4px; }
   input, select, textarea { width: 100%; font: .95rem var(--sans); color: var(--ink); background: var(--bg); border: 1px solid var(--line2); border-radius: 7px; padding: 9px 11px; }
   textarea { font: .8rem/1.45 var(--mono); resize: vertical; }
@@ -159,9 +160,13 @@
 
     <!-- devices -->
     <section class="card" id="devices">
-      <h2>Connected devices</h2>
+      <h2>Devices</h2>
       <p class="lead">Devices on your hotspots. <b>Pause</b> cuts one device's internet (a kid's tablet, a phone eating the hotel's data cap); the apps on this box keep working for it.</p>
       <ul class="saved" id="devList"><li class="note">Loading…</li></ul>
+      <h3 class="sub-h">Lost &amp; found</h3>
+      <p class="lead" id="lostLead">Devices that left the hotspot, and when they were last on it. Only you see this.</p>
+      <ul class="saved" id="lostList"></ul>
+      <div class="row"><button class="btn" id="lostClear" type="button">Clear history</button></div>
     </section>
 
     <!-- data use -->
@@ -410,21 +415,49 @@ $("#vpnForm").addEventListener("submit", e => { e.preventDefault(); busy($("#vpn
 }); });
 
 // ---------- devices ----------
+function hhmm(ts) { return new Date(ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+function when(ts) {  // "14:32", "yesterday 14:32", "Tue 3 Dec 14:32"
+  const d = new Date(ts * 1000), now = new Date(), day = 864e5;
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (d >= midnight) return hhmm(ts);
+  if (d >= midnight - day) return `yesterday ${hhmm(ts)}`;
+  return `${d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })} ${hhmm(ts)}`;
+}
+function since(ts) {  // seconds -> "3 min ago" (ago() above); days past two days
+  const s = Math.max(0, Date.now() / 1000 - ts);
+  return s >= 2 * 86400 ? `${Math.round(s / 86400)} days ago` : ago(s);
+}
+function devRow(d, lost) {
+  const who = `${d.person ? `${esc(d.person.avatar)} <b>${esc(d.person.name)}</b> · ` : ""}${esc(d.name || "Unnamed device")}`;
+  const tags = `${d.you ? '<span class="tag you">this device</span>' : ""}${d.paused ? '<span class="tag paused">paused</span>' : ""}`;
+  const sub = lost ? `last seen <b>${when(d.last_seen)}</b> (${since(d.last_seen)}) · ${esc(d.mac)}`
+    : `${d.here && d.since ? `here since ${when(d.since)} · ` : ""}${esc(d.ip || "not connected")} · ${esc(d.mac)}`;
+  return `<li><span>${who}${tags}<span class="sub">${sub}</span></span>
+      <button type="button" data-mac="${esc(d.mac)}" data-paused="${d.paused ? 1 : 0}" data-name="${esc(d.name || d.mac)}" data-you="${d.you ? 1 : 0}">${d.paused ? "resume" : "pause"}</button></li>`;
+}
 async function loadDevices() {
   try {
-    const { devices } = await api("GET", "/api/admin/devices");
-    $("#devList").innerHTML = devices.map(d => `<li><span>${d.person ? `${esc(d.person.avatar)} <b>${esc(d.person.name)}</b> · ` : ""}${esc(d.name || "Unnamed device")}${d.you ? '<span class="tag you">this device</span>' : ""}${d.paused ? '<span class="tag paused">paused</span>' : ""}
-        <span class="sub">${esc(d.ip || "not connected")} · ${esc(d.mac)}</span></span>
-      <button type="button" data-mac="${esc(d.mac)}" data-paused="${d.paused ? 1 : 0}" data-name="${esc(d.name || d.mac)}" data-you="${d.you ? 1 : 0}">${d.paused ? "resume" : "pause"}</button></li>`).join("")
+    const { devices, tracking, keep_days } = await api("GET", "/api/admin/devices");
+    const lost = devices.filter(d => d.here === false && d.last_seen);
+    $("#devList").innerHTML = devices.filter(d => !lost.includes(d)).map(d => devRow(d, false)).join("")
       || `<li class="note">No devices yet.</li>`;
+    $("#lostList").innerHTML = lost.map(d => devRow(d, true)).join("")
+      || `<li class="note">${tracking ? "Nobody has left yet." : "Waiting for the hotspots' station lists…"}</li>`;
+    $("#lostLead").textContent = `Devices that left the hotspot, and when they were last on it (kept ${keep_days} days). Only you see this.`;
   } catch (err) { $("#devList").innerHTML = `<li class="note">${esc(err.message)}</li>`; }
 }
-$("#devList").addEventListener("click", e => {
+$("#lostClear").addEventListener("click", e => busy(e.target, async () => {
+  if (!confirm("Forget when every device was here? Devices on the hotspot now show up again within a minute.")) return;
+  await api("DELETE", "/api/admin/devices/history"); await loadDevices();
+}));
+function onPause(e) {
   const b = e.target.closest("[data-mac]"); if (!b) return;
   const pause = b.dataset.paused !== "1";
   if (pause && b.dataset.you === "1" && !confirm("Pause your own device? You'll keep the admin panel, but lose the internet until you resume it.")) return;
   busy(b, async () => { try { await api("POST", `/api/admin/devices/${encodeURIComponent(b.dataset.mac)}/pause`, { paused: pause }); } catch (err) { alert(err.message); } await loadDevices(); });
-});
+}
+$("#devList").addEventListener("click", onPause);
+$("#lostList").addEventListener("click", onPause);
 
 // ---------- data use ----------
 async function loadUsage() {

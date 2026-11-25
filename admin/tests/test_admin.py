@@ -352,6 +352,69 @@ def test_devices_pause():
     assert c.post("/api/admin/devices/01:00:5e:00:00:01/pause", headers=H, json={"paused": True}).status_code == 400
 
 
+def test_lost_and_found():
+    reset_world()
+    main.store.data["seen"] = {}
+    main.presence.ok = None
+    main.router.away = set()
+    assert all(d["here"] is None for d in ok(c.get("/api/admin/devices"))["devices"])  # not sampled yet
+    t0 = 1_000_000.0
+    asyncio.run(main.presence.track(now=t0))
+    devs = ok(c.get("/api/admin/devices"))
+    assert devs["tracking"] and all(d["here"] and d["since"] == t0 for d in devs["devices"]), devs
+    # the Pixel leaves; ten minutes later it's "last seen" at t0, listed after the ones still here
+    main.router.away = {"f8:0f:f9:77:88:99"}
+    asyncio.run(main.presence.track(now=t0 + 600))
+    devs = ok(c.get("/api/admin/devices"))["devices"]
+    pixel = devs[-1]
+    assert pixel["name"] == "Pixel-8" and pixel["here"] is False and pixel["last_seen"] == t0 and pixel["since"] is None
+    assert all(d["here"] and d["last_seen"] == t0 + 600 for d in devs[:-1])
+    # back after a short blip: the same visit; after a long gap: a new one
+    main.router.away = set()
+    asyncio.run(main.presence.track(now=t0 + 660))                 # back after 11 minutes: new visit
+    assert main.store.data["seen"]["f8:0f:f9:77:88:99"]["since"] == t0 + 660
+    main.router.away = {"f8:0f:f9:77:88:99"}
+    asyncio.run(main.presence.track(now=t0 + 690))
+    main.router.away = set()
+    asyncio.run(main.presence.track(now=t0 + 720))                 # a one-minute blip: same visit
+    assert main.store.data["seen"]["f8:0f:f9:77:88:99"]["since"] == t0 + 660
+    main.router.away = {"f8:0f:f9:77:88:99"}
+    asyncio.run(main.presence.track(now=t0 + 750))
+    main.router.away = set()
+    asyncio.run(main.presence.track(now=t0 + 5000))
+    assert main.store.data["seen"]["f8:0f:f9:77:88:99"]["since"] == t0 + 5000
+    # lease gone: still listed, with the name it had
+    main.router.away = {"74:c2:46:aa:bb:cc", "f8:0f:f9:77:88:99"}
+    asyncio.run(main.presence.track(now=t0 + 6000))
+    saved = main.router.devices_list
+    main.router.devices_list = [d for d in saved if d["name"] != "Pixel-8"]
+    try:
+        gone = next(d for d in ok(c.get("/api/admin/devices"))["devices"] if d["mac"] == "f8:0f:f9:77:88:99")
+        assert gone["name"] == "Pixel-8" and gone["ip"] is None and gone["last_seen"] == t0 + 5000, gone
+    finally:
+        main.router.devices_list = saved
+    # older than SEEN_KEEP_DAYS: forgotten
+    asyncio.run(main.presence.track(now=t0 + 5000 + main.SEEN_KEEP_DAYS * 86400 + 1))
+    assert "f8:0f:f9:77:88:99" not in main.store.data["seen"]
+    # can't read the station list: keep the history, and don't call anyone gone
+    real = main.router.stations
+    async def refused():
+        raise main.RouterError("denied")
+    main.router.stations = refused
+    try:
+        asyncio.run(main.presence.track(now=t0 + 9e6))
+        devs = ok(c.get("/api/admin/devices"))
+        assert devs["tracking"] is False and all(d["here"] is None for d in devs["devices"])
+        assert main.store.data["seen"], "history kept"
+    finally:
+        main.router.stations = real
+    # the mock world walks devices off by name; clearing history needs the admin
+    assert ok(c.post("/api/mock/world", json={"away": ["iPhone"]}))["away"] == ["3c:22:fb:10:20:30"]
+    ok(c.delete("/api/admin/devices/history", headers=H))
+    assert main.store.data["seen"] == {}
+    main.router.away = set()
+
+
 def test_whos_who():
     from fastapi.testclient import TestClient as TC
     main._leases["at"] = -1e9

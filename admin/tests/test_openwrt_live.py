@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import httpx  # noqa: E402
 
 from router import (BLOCK_PREFIX, PORTAL_DNS, PORTAL_RULE, UPSTREAM_NET, UPSTREAM_SECTION, VPN_FWD, VPN_NET,  # noqa: E402
-                    VPN_PEER, VPN_ZONE, WWAN_METRIC, OpenWrtRouter, RouterError, block_rule_name)
+                    VPN_PEER, VPN_ZONE, WWAN_METRIC, OpenWrtRouter, RouterError, UbusError, block_rule_name)
 from vpn import parse_wg_conf  # noqa: E402
 
 
@@ -144,6 +144,15 @@ async def main():
         assert rule["proto"] == "all", rule
         assert [d for d in await r.devices() if d["mac"] == mac][0]["paused"] is True
         print(f"ok   devices: DHCP leases readable ({len(devs)} now), pause adds a REJECT rule to wan")
+
+        # ---- lost & found: the hotspots' station lists (no radios here, so empty) ----
+        st = await r.stations()
+        assert isinstance(st, list), st
+        try:  # allowed, even with no such interface: anything but "access denied" (6)
+            await r.call("iwinfo", "assoclist", {"device": "phy0-ap0"}, timeout=5)
+        except UbusError as e:
+            assert e.code != 6, "iwinfo assoclist must be in the ACL (lost & found)"
+        print(f"ok   lost & found: station lists readable ({len(st)} now)")
 
         # ---- data-use counters: must not hang (live numbers need real netifd) ----
         t0 = asyncio.get_running_loop().time()

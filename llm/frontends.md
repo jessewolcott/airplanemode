@@ -88,8 +88,12 @@ Served by FastAPI at `/admin/` (`StaticFiles(html=True)`). It has a login card a
    connected, with the sign-in hint). Shows a note when it isn't a full tunnel. Toggle → `POST /api/admin/vpn/enabled` (reverts on
    error). *Remove* → `DELETE`. A setup `<details>` with a textarea + file input → `PUT /api/admin/vpn
    {config, enabled:true}`. The private key is never shown again.
-3. **Connected devices** (`#devices`): `GET /api/admin/devices`. Tags *this device* and *paused*.
-   A pause/resume button → `POST /api/admin/devices/<mac>/pause`. Pausing your own device asks for confirmation.
+3. **Devices** (`#devices`): `GET /api/admin/devices`. Tags *this device* and *paused*; "here
+   since" for devices on the hotspot. A pause/resume button → `POST /api/admin/devices/<mac>/pause`
+   (also on devices that left). Pausing your own device asks for confirmation. **Lost & found**
+   (`#lostList`, decision 0025): devices with `here === false`, "last seen 14:32 (2 h ago)" via
+   `when()`/`since()` (`since()` reuses the VPN card's `ago()`). *Clear history* (asks first) →
+   `DELETE /api/admin/devices/history`.
 4. **Data use** (`#usage`): the current session (since time, total, ↓/↑) and a per-network list.
    *Reset counters* → `DELETE /api/admin/usage`.
 5. **Your hotspots**: one form per hotspot (SSID, security from `HOTSPOT_SEC`, plus the current value

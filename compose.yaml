@@ -114,9 +114,10 @@ services:
 
   # Plays the videos and music on Drop. The browser streams them from /drop/ directly.
   cinema:
-    image: ghcr.io/jessewolcott/airplanemode-cinema:0.1.2
+    image: ghcr.io/jessewolcott/airplanemode-cinema:0.2.0
     environment:
       DROP_URL: http://drop:8000
+      ADMIN_URL: http://admin:8000    # who's who names in watch parties (decision 0023)
     volumes:
       - cinema-data:/data           # posters only
     mem_limit: ${CINEMA_MEM:-64m}

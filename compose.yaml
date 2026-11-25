@@ -17,6 +17,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./portal:/srv/portal:ro
+      - drop-data:/srv/drop:ro         # Caddy sends Drop's files once Drop has said yes
       - caddy-data:/data
     environment:
       LAN_IP: ${LAN_IP:-127.0.0.1}       # offline-popup redirects go here
@@ -72,7 +73,7 @@ services:
       - "--reasoning"               # no "thinking" output; the apps want plain replies
       - "off"
       - "--cache-ram"               # host prompt cache; the default (8 GB) would outgrow mem_limit
-      - "256"
+      - "${LLM_CACHE_RAM:-256}"     # 256 MB holds ~6-9 app prompts of ~1000 tokens (decision 0024)
       - "--host"
       - "0.0.0.0"
       - "--port"
@@ -87,6 +88,9 @@ services:
       LLAMA_CACHE: /models
     volumes:
       - models:/models
+    # Which CPU cores the model may use. On the R6S, only the fast Cortex-A76 cores (4-7):
+    # spread over the slow A55s too, every token waits for the slowest thread. Empty = any.
+    cpuset: "${LLM_CPUS:-}"
     mem_limit: ${LLM_MEM:-3500m}
     restart: unless-stopped
 

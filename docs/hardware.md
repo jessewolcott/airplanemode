@@ -9,7 +9,7 @@ Untested steps are marked *untested*. Update this file as each device is actuall
 - OS: **FriendlyWrt** (FriendlyElec's OpenWrt build). It ships with Docker. Flash it to eMMC.
 - LuCI uses port 80, so AirplaneMode uses **8080**, bound to the LAN address
   (`LAN_IP=192.168.2.1`, FriendlyWrt's default).
-- The model runs on the 4 fast A76 cores (`LLM_THREADS=4`). Expect roughly 14-17 tokens/s for
+- The model runs on the 4 fast A76 cores (`LLM_CPUS=4-7`, `LLM_THREADS=4`; decision 0024). Expect roughly 14-17 tokens/s for
   Gemma 4 E2B Q4 (*estimate from other RK3588 boards, measure on the device*). Keep it cool: it throttles without airflow.
 - The RK3588S also has a 6 TOPS NPU. llama.cpp doesn't use it; Rockchip's RKLLM does
   (see decision 0003).

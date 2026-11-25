@@ -17,8 +17,9 @@ Key points:
   `dns: [LAN_IP]`, `extra_hosts host.docker.internal:host-gateway`, `admin-data:/data`, and
   `./portal/apps.json:/config/apps.json:ro`.
 - `llm` has `profiles: ["llm"]` and only runs when `COMPOSE_PROFILES=llm`. Command:
-  `-hf ${LLM_MODEL} --no-mmproj --reasoning off --cache-ram 256 --host 0.0.0.0 --port 8080 -t ${LLM_THREADS} -np ${LLM_SLOTS} -c ${LLM_CTX}`
+  `-hf ${LLM_MODEL} --no-mmproj --reasoning off --cache-ram ${LLM_CACHE_RAM:-256} --host 0.0.0.0 --port 8080 -t ${LLM_THREADS} -np ${LLM_SLOTS} -c ${LLM_CTX}`
   (text only, no thinking output, prompt cache capped so it stays under `mem_limit`; decision 0018),
+  `cpuset: ${LLM_CPUS}` (empty = any core; the R6S profile uses `4-7`, the A76 cores; decision 0024),
   `LLAMA_CACHE=/models`. The model downloads from Hugging Face on first start (while online).
   It's never published, so apps use `http://llm:8080`. There's no API key (add `--api-key` if it's ever exposed).
 - The model apps (darklight, guide, couch) also have `profiles: ["llm"]`, so they don't run on the
@@ -54,6 +55,7 @@ here, not in separate compose files (decision 0002).
 | `LLM_URL` | (unset → `http://llm:8080`) | empty (no model) | apps |
 | `LLM_MODEL` | `unsloth/gemma-4-E2B-it-GGUF:Q4_K_M` (decision 0018) | n/a | llm |
 | `LLM_THREADS` / `LLM_SLOTS` / `LLM_CTX` / `LLM_MEM` | 4 / 2 / 4096 / 3500m | n/a | llm |
+| `LLM_CPUS` / `LLM_CACHE_RAM` | `4-7` / 256 (compose defaults: any core / 256) | n/a | llm (decision 0024) |
 | `PROXY_MEM` / `ADMIN_MEM` | 64m / 96m | 48m / 80m | |
 | `DARKLIGHT_MEM` / `DROP_MEM` / `CINEMA_MEM` / `QUICKSHOT_MEM` / `DOOM_MEM` / `GUIDE_MEM` | 256m / 128m / 64m / 64m / 32m / 256m | n/a / 128m / 64m / 64m / 32m / n/a (no model apps) | apps |
 | `GATECHANGE_MEM` / `PASSPORT_MEM` / `WAYFARER_MEM` / `COUCH_MEM` | 64m each | 48m / 48m / 64m / n/a | apps (decision 0016) |

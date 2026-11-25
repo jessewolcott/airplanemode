@@ -24,9 +24,9 @@ Defined in `compose.yaml`. Only `proxy` publishes a port.
 
 | Service | Image | Port (internal) | Volumes | Role |
 |---|---|---|---|---|
-| `proxy` | `caddy:2.8-alpine` | 80, published as `${LAN_IP}:${HTTP_PORT}` (default `127.0.0.1:8080`) | `./Caddyfile` (ro), `./portal` → `/srv/portal` (ro), `caddy-data` | Front door: landing page, app routes, `/api` + `/admin` |
+| `proxy` | `caddy:2.8-alpine` | 80, published as `${LAN_IP}:${HTTP_PORT}` (default `127.0.0.1:8080`) | `./Caddyfile` (ro), `./portal` → `/srv/portal` (ro), `drop-data` → `/srv/drop` (ro, serves Drop's files), `caddy-data` | Front door: landing page, app routes, `/api` + `/admin` |
 | `admin` | built from `./admin` (tag `airplanemode-admin:local`) | 8000 (uvicorn) | `admin-data` → `/data`, `./portal/apps.json` → `/config/apps.json` (ro) | Status API, captive check, admin panel + API, supervisor |
-| `llm` | `ghcr.io/ggml-org/llama.cpp:server-b12602` | 8080 | `models` → `/models` | Shared model, **only with profile `llm`** (R6S) |
+| `llm` | `ghcr.io/ggml-org/llama.cpp:server-b12602` | 8080 | `models` → `/models` | Shared model, **only with profile `llm`** (R6S). `cpuset: ${LLM_CPUS}` (R6S: `4-7`, the A76 cores), `--cache-ram ${LLM_CACHE_RAM:-256}` (decision 0024) |
 | `darklight` | `ghcr.io/jessewolcott/airplanemode-darklight:0.3.2` | 8000 | (none) | Text adventure (uses LLM) |
 | `drop` | `...-drop:0.2.2` | 8000 | `drop-data` | File/notes sharing. Asks admin for session checks |
 | `cinema` | `...-cinema:0.2.0` | 8000 | `cinema-data` (posters) | Plays Drop's media, TV series since 0.1.1, watch parties since 0.2.0 (`DROP_URL=http://drop:8000`, `ADMIN_URL`) |
@@ -43,7 +43,7 @@ Internal service-to-service calls use Docker DNS names: apps → `http://llm:808
 `/api/admin/session`, Cinema/QuickShot → `http://drop:8000`.
 
 The admin container also has:
-- `dns: [${LAN_IP}]` (`compose.yaml:56`). Docker can't reach the host's resolver at
+- `dns: [${LAN_IP}]` (`compose.yaml:57`). Docker can't reach the host's resolver at
   127.0.0.1 and would fall back to public DNS, which hotels block before sign-in. The
   captive-portal probe would then wrongly say "offline". The dev override resets this to `[]`.
 - `extra_hosts: host.docker.internal:host-gateway`, so the default
@@ -57,9 +57,10 @@ uvicorn==0.34.0 httpx==0.28.1`, `CMD uvicorn main:app --host 0.0.0.0 --port 8000
 ## Request flow through Caddy (`Caddyfile`)
 
 Global options: `auto_https off`, `admin off` (no Caddy admin API). One site block `:80`
-with `encode gzip`. Directive order matters, and Caddy sorts `redir` before `handle`:
+with `encode zstd gzip` (zstd where the browser takes it; decision 0024). Directive order
+matters, and Caddy sorts `redir` before `handle`:
 
-1. **Offline-popup redirect** (`Caddyfile:17-21`). Named matcher `@elsewhere` matches when
+1. **Offline-popup redirect** (`Caddyfile:19-23`). Named matcher `@elsewhere` matches when
    *both* of these are true:
    - the host is **not** `{$LAN_IP:127.0.0.1}`, `airplane.mode` or `localhost`;
    - the host is **not** an IPv4 literal (`^[0-9.]+$`) and doesn't contain `:` (an IPv6 literal).
@@ -72,14 +73,20 @@ with `encode gzip`. Directive order matters, and Caddy sorts `redir` before `han
    to network" sheet. Bare IPs pass through, because that's someone typing the box address (or the laptop in dev).
    The matcher can't list the same host twice: Caddy rejects duplicate hosts, which matters
    when `LAN_IP` is `127.0.0.1` in dev (that's why `localhost` is a separate literal).
-2. **Apps**, one pair per app (`Caddyfile:24-77`):
+2. **Apps**, one pair per app (`Caddyfile:26-89`):
    ```
-   redir /drop /drop/
-   handle_path /drop/* { reverse_proxy drop:8000 }
+   redir /cinema /cinema/
+   handle_path /cinema/* { reverse_proxy cinema:8000 }
    ```
    `handle_path` **strips the prefix**, so the app sees `/`. That's why apps must use
    relative URLs (app contract). Routes exist for darklight, drop, cinema, quickshot, doom, guide, gatechange, passport, wayfarer, couch.
-3. **Platform** (`Caddyfile:80-86`): `redir /admin /admin/`. `handle /api/*` and
+   **Drop is the exception** (decision 0024): its `reverse_proxy` sends `header_up
+   X-Sendfile-Type: X-Accel-Redirect`; Drop checks access and answers a file GET with
+   `X-Accel-Redirect: /files/<id>` and no body, and `handle_response @accel` serves
+   `/srv/drop/files/<id>` (the `drop-data` volume, read-only in the proxy) with `file_server`,
+   copying Content-Type, Content-Disposition, CSP, nosniff and Cache-Control from Drop.
+   `file_server` does Range, ETag and sendfile. Only `/files/*` values trigger it.
+3. **Platform** (`Caddyfile:91-97`): `redir /admin /admin/`. `handle /api/*` and
    `handle /admin/*` → `reverse_proxy admin:8000` **without** stripping, so FastAPI sees
    `/api/...` and `/admin/...`. FastAPI serves `/admin/` from `admin/static/` via
    `StaticFiles(html=True)` (`main.py:712`).

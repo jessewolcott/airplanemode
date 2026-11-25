@@ -5,7 +5,9 @@
 }
 
 :80 {
-	encode gzip
+	# zstd where the browser takes it (cheaper for the box's CPU than gzip), gzip otherwise.
+	# Video, audio and images aren't compressed; already-compressed responses pass through.
+	encode zstd gzip
 
 	# ---- offline popup ----
 	# With no internet at all, the router answers every DNS name with a fake address and a
@@ -28,7 +30,21 @@
 
 	redir /drop /drop/
 	handle_path /drop/* {
-		reverse_proxy drop:8000
+		reverse_proxy drop:8000 {
+			# Drop checks who may have a file, then answers with X-Accel-Redirect: /files/<id>
+			# and Caddy sends the bytes from Drop's volume (read-only here), with ranges and
+			# sendfile, instead of every film streaming through Drop's Python process.
+			header_up X-Sendfile-Type X-Accel-Redirect
+			@accel header X-Accel-Redirect /files/*
+			handle_response @accel {
+				root * /srv/drop
+				rewrite * {rp.header.X-Accel-Redirect}
+				copy_response_headers {
+					include Content-Type Content-Disposition Content-Security-Policy X-Content-Type-Options Cache-Control
+				}
+				file_server
+			}
+		}
 	}
 
 	redir /cinema /cinema/

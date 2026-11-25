@@ -76,6 +76,9 @@ VS Code tasks (`.vscode/tasks.json`) wrap all of the above.
   supervisor ticks and never during a join grace period. Any uplink turns it off immediately,
   so it can't hide a hotel's real sign-in page.
 - Lockout guard: never allow disabling or deleting the last enabled hotspot.
+- Caddy sends Drop's file bytes (decision 0024): Drop checks access, answers
+  `X-Accel-Redirect: /files/<id>`, Caddy serves it from `drop-data` (read-only in the proxy).
+  Any new access rule for files belongs in Drop *before* that answer.
 - Caddy is published **only on `LAN_IP`** (Docker's firewall rules can bypass OpenWrt's).
   The admin container uses **`dns: LAN_IP`** (Docker otherwise falls back to public DNS,
   which hotels block before sign-in).
@@ -191,6 +194,10 @@ Done and pushed (CI green):
 - Sync Watch (decision 0023): watch parties in Cinema (`Party` room, anyone controls, each
   phone steers its own player by clock offset + `playbackRate`). Tested by unit/API tests and
   with two browser contexts in the dev stack (within 0.1 s). Released: Cinema 0.2.0.
+- Performance pass (decision 0024): model pinned to the A76 cores (`LLM_CPUS=4-7`), Caddy
+  sends Drop's files (`X-Accel-Redirect`, ~5x less CPU in dev), `encode zstd gzip`,
+  `LLM_CACHE_RAM` setting, QAT Q4_0 one line away in the R6S profile. Prompt caching, warm-up
+  and asset caching were checked and already fine. Needs Drop 0.2.3 (not released yet).
 
 **No real hardware has been tested yet.** The R6S build is in progress. Parts:
 - NanoPi R6S 8 GB with the metal case,

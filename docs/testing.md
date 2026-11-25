@@ -130,7 +130,8 @@ Things only real hardware can prove. Tick them off here as they're verified.
 - [ ] **Sync Watch:** four to six phones in one Cinema watch party on the same film over the
       hotspot. They stay within about a tenth of a second (listen with earbuds side by side);
       pause and skip from any phone; up next moves everyone. Note whether the R6S keeps every
-      stream smooth, and what happens on iOS when the first play needs a tap.
+      stream smooth (Caddy sends the bytes since decision 0024; `top` shows caddy, not Drop's
+      python, busy), and what happens on iOS when the first play needs a tap.
 - [ ] **Data use:** downloading a known-size file on a phone shows up in the panel within a
       minute, under the right network name.
 - [ ] **Doom:** on an Android phone and an iPhone (home-screen web app), Layover starts, the
@@ -147,5 +148,12 @@ Things only real hardware can prove. Tick them off here as they're verified.
       message shows the resources card.
 - [ ] The model's speed on the R6S (tokens/s, Gemma 4 E2B) and its memory under `LLM_MEM=3500m`,
       including the first answers after a reboot (the 3.1 GB file is read from eMMC as needed).
-      Try Google's QAT Q4_0 build too. Record the numbers in a new decision (see 0018).
+      Record the numbers in a new decision (see 0018, 0024):
+  - `grep "CPU part" /proc/cpuinfo`: cores 4-7 should be `0xd0b` (A76); fix `LLM_CPUS` if not.
+  - Tokens/s with `LLM_CPUS=4-7` against an empty `LLM_CPUS` (all eight cores).
+  - Google's QAT Q4_0 build (`LLM_MODEL=google/gemma-4-E2B-it-qat-q4_0-gguf`): speed, and
+    the three model apps' evals (decision 0020).
+  - Seconds to the first word of each model app's first answer (its prompt read once) and of
+    its second (from the prompt cache). If the first is long, try a bigger `LLM_CACHE_RAM`
+    and a warm-up of each app's prompt.
 - [ ] Temperature and power draw with both adapters and the model busy.

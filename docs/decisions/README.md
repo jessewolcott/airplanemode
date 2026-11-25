@@ -29,3 +29,4 @@ rewriting history.
 | [0021](0021-whos-who.md) | Who's who: a name and a picture per device (MAC + cookie), kept by the admin service |
 | [0022](0022-rooms-sdk.md) | A shared Rooms SDK (`sdk/rooms`, `amrooms`) for multiplayer apps; Gate Change and Passport use it |
 | [0023](0023-sync-watch.md) | Sync Watch: watch parties in Cinema, every phone in step, anyone controls |
+| [0024](0024-performance-pass.md) | Performance pass: model on the fast cores, Caddy sends Drop's files, zstd |

@@ -28,9 +28,9 @@ Defined in `compose.yaml`. Only `proxy` publishes a port.
 | `admin` | built from `./admin` (tag `airplanemode-admin:local`) | 8000 (uvicorn) | `admin-data` → `/data`, `./portal/apps.json` → `/config/apps.json` (ro) | Status API, captive check, admin panel + API, supervisor |
 | `llm` | `ghcr.io/ggml-org/llama.cpp:server-b12602` | 8080 | `models` → `/models` | Shared model, **only with profile `llm`** (R6S). `cpuset: ${LLM_CPUS}` (R6S: `4-7`, the A76 cores), `--cache-ram ${LLM_CACHE_RAM:-256}` (decision 0024) |
 | `darklight` | `ghcr.io/jessewolcott/airplanemode-darklight:0.3.2` | 8000 | (none) | Text adventure (uses LLM) |
-| `drop` | `...-drop:0.2.3` | 8000 | `drop-data` | File/notes sharing. Asks admin for session checks |
+| `drop` | `...-drop:0.3.0` | 8000 | `drop-data` | File/notes sharing. Asks admin for session checks |
 | `cinema` | `...-cinema:0.2.0` | 8000 | `cinema-data` (posters) | Plays Drop's media, TV series since 0.1.1, watch parties since 0.2.0 (`DROP_URL=http://drop:8000`, `ADMIN_URL`) |
-| `quickshot` | `...-quickshot:0.1.2` | 8000 | `quickshot-data` | Swipe feed over Drop's QuickShot folder. Admin deletes comments |
+| `quickshot` | `...-quickshot:0.1.3` | 8000 | `quickshot-data` | Swipe feed over Drop's QuickShot folder. Admin deletes comments |
 | `doom` | `...-doom:0.1.1` | 8000 (busybox httpd) | (none) | Static files: PrBoom+ in WebAssembly runs in the browser. Reads Drop WADs from the browser |
 | `guide` | `...-guide:0.1.2` | 8000 | `guide-data` (~260 MB Wikivoyage) | Offline travel guide (uses LLM) |
 | `gatechange` | `...-gatechange:0.2.0` | 8000 | (none) | Colour/number card game: rooms + long-poll + bots, in memory, on the Rooms SDK |

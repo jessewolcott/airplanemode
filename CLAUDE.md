@@ -173,8 +173,8 @@ Done and pushed (CI green):
   (prunes old `.bad-*` copies). Screenshots retaken after these changes. Checked in headless
   Chromium at phone and desktop size, and by Jesse on a real phone against the local dev stack
   (looked good); not yet on the R6S.
-- **Current releases** (pinned in `compose.yaml`): Dark Light 0.3.2, Drop 0.2.3, Guide 0.1.2,
-  Cinema 0.2.0, QuickShot 0.1.2, Doom 0.1.1, Gate Change 0.2.0, Passport 0.2.0, Wayfarer 0.2.1,
+- **Current releases** (pinned in `compose.yaml`): Dark Light 0.3.2, Drop 0.3.0, Guide 0.1.2,
+  Cinema 0.2.0, QuickShot 0.1.3, Doom 0.1.1, Gate Change 0.2.0, Passport 0.2.0, Wayfarer 0.2.1,
   The Couch 0.2.4.
 - Every repo has checked-in `llm/` notes ("how it's built", for LLMs and engineers), kept out of
   the images by `.dockerignore`. The code wins when they disagree; fix the notes.
@@ -196,14 +196,13 @@ Done and pushed (CI green):
 - Performance pass (decision 0024): model pinned to the A76 cores (`LLM_CPUS=4-7`), Caddy
   sends Drop's files (`X-Accel-Redirect`, ~5x less CPU in dev), `encode zstd gzip`,
   `LLM_CACHE_RAM` setting, QAT Q4_0 one line away in the R6S profile. Prompt caching, warm-up
-  and asset caching were checked and already fine.
+  and asset caching were checked and already fine. Released: Drop 0.2.3.
 - Lost & found (decision 0025): admin panel *Devices* → *Lost & found*, "last seen" per device
   from the hotspots' station lists (`iwinfo assoclist`, new in the ACL: re-run
   `router-setup.sh`), kept 14 days in the store's `seen`. Admin only. Mock: `{"away": ["Pixel-8"]}`.
 - Drop read-only for non-admins (decision 0026): only the admin adds, renames, moves, keeps or
   deletes, unless the admin ticks "let everyone" (Drop's `settings.json`); standalone Drop stays
-  open. QuickShot's folder setup forwards the admin cookie. Not released yet (Drop 0.3.0,
-  QuickShot 0.1.3). Released: Drop 0.2.3.
+  open. QuickShot's folder setup forwards the admin cookie. Released: Drop 0.3.0, QuickShot 0.1.3.
 
 **No real hardware has been tested yet.** The R6S build is in progress. Parts:
 - NanoPi R6S 8 GB with the metal case,

@@ -105,7 +105,7 @@ services:
     restart: unless-stopped
 
   drop:
-    image: ghcr.io/jessewolcott/airplanemode-drop:0.2.2
+    image: ghcr.io/jessewolcott/airplanemode-drop:0.2.3
     environment:
       DROP_MAX_BYTES: ${DROP_MAX_BYTES:-4g}
       DROP_MAX_FILE: ${DROP_MAX_FILE:-2g}

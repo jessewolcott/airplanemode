@@ -47,6 +47,6 @@ show what changed, not what the R6S will do.
 
 - The proxy can read Drop's volume. It serves from it only on Drop's say-so: a client's own
   `X-Accel-Redirect` header is ignored (checked), and Caddy serves only `/files/*` paths.
-- Needs Drop 0.2.3. With an older Drop, Caddy's extra header is ignored and Drop streams as before.
+- Needs Drop 0.2.3 (pinned). With an older Drop, Caddy's extra header is ignored and Drop streams as before.
 - The R6S numbers (tokens/s on cores 4-7 against all eight, QAT against Q4_K_M, the first
   answer of each app, streams) go in `docs/testing.md`'s checklist.

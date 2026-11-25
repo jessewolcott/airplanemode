@@ -7,7 +7,7 @@ Authoritative rules: `docs/app-contract.md`. Background: decisions 0001, 0005, 0
 | id | Image tag | Uses LLM | Data volume | Talks to | Notes |
 |---|---|---|---|---|---|
 | `darklight` | `airplanemode-darklight:0.3.2` | yes (optional) | none | llm | Text adventures (three worlds), party mode |
-| `drop` | `airplanemode-drop:0.2.2` | no | `drop-data` | admin (`ADMIN_URL`) | Files/notes between devices. Folders, "downloads off" for the admin. `.wad` = `application/x-doom-wad` |
+| `drop` | `airplanemode-drop:0.2.3` | no | `drop-data` | admin (`ADMIN_URL`) | Files/notes between devices. Folders, "downloads off" for the admin. `.wad` = `application/x-doom-wad` |
 | `cinema` | `airplanemode-cinema:0.2.0` | no | `cinema-data` (posters) | drop (`DROP_URL`), admin (`ADMIN_URL`, who's who) | Streams Drop's media straight from `/drop/api/files/<id>`. Declares `opens`. Watch parties on the Rooms SDK (decision 0023) |
 | `quickshot` | `airplanemode-quickshot:0.1.2` | no | `quickshot-data` (comments.json, stats.json) | drop, admin | Swipe feed over Drop's top-level `QuickShot` folder |
 | `doom` | `airplanemode-doom:0.1.1` | no | none (saves in the browser's IndexedDB) | drop (from the browser, `../drop/`) | PrBoom+ in WebAssembly, static files on busybox httpd (32m). Freedoom + Layover + Drop WADs. Declares `opens` (decision 0015) |

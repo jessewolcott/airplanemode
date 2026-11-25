@@ -9,7 +9,7 @@ their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airpla
 one-line installer is
 `../airplanemode-site`, live at https://airplanemode.xin (GitHub Pages, own domain; decisions
 0011, 0012, 0019).
-Start with `README.md`, then `docs/decisions/` (0001–0025). They explain *why* things are
+Start with `README.md`, then `docs/decisions/` (0001–0026). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
@@ -199,7 +199,11 @@ Done and pushed (CI green):
   and asset caching were checked and already fine.
 - Lost & found (decision 0025): admin panel *Devices* → *Lost & found*, "last seen" per device
   from the hotspots' station lists (`iwinfo assoclist`, new in the ACL: re-run
-  `router-setup.sh`), kept 14 days in the store's `seen`. Admin only. Mock: `{"away": ["Pixel-8"]}`. Released: Drop 0.2.3.
+  `router-setup.sh`), kept 14 days in the store's `seen`. Admin only. Mock: `{"away": ["Pixel-8"]}`.
+- Drop read-only for non-admins (decision 0026): only the admin adds, renames, moves, keeps or
+  deletes, unless the admin ticks "let everyone" (Drop's `settings.json`); standalone Drop stays
+  open. QuickShot's folder setup forwards the admin cookie. Not released yet (Drop 0.3.0,
+  QuickShot 0.1.3). Released: Drop 0.2.3.
 
 **No real hardware has been tested yet.** The R6S build is in progress. Parts:
 - NanoPi R6S 8 GB with the metal case,

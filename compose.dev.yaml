@@ -34,6 +34,10 @@ services:
     image: airplanemode-quickshot:dev
     build: ../airplanemode-quickshot
 
+  tv:
+    image: airplanemode-tv:dev
+    build: ../airplanemode-tv
+
   doom:
     image: airplanemode-doom:dev
     build: ../airplanemode-doom

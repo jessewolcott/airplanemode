@@ -52,6 +52,17 @@
     "icon": "/icons/quickshot.svg"
   },
   {
+    "id": "tv",
+    "name": "TV Board",
+    "description": "A screen for the room: who's home, notes and reservations posted from phones, and a slideshow of the photos in Drop's TV folder.",
+    "path": "/tv/",
+    "monogram": "TV",
+    "color": "#f08fb4",
+    "category": "Tools",
+    "uses_llm": false,
+    "icon": "/icons/tv.svg"
+  },
+  {
     "id": "doom",
     "name": "Doom",
     "description": "The classic shooter, running on your device with touch controls. Freedoom, the Layover airport episode, or your own WADs from Drop.",

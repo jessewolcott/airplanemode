@@ -31,6 +31,7 @@ Defined in `compose.yaml`. Only `proxy` publishes a port.
 | `drop` | `...-drop:0.3.0` | 8000 | `drop-data` | File/notes sharing. Asks admin for session checks |
 | `cinema` | `...-cinema:0.2.0` | 8000 | `cinema-data` (posters) | Plays Drop's media, TV series since 0.1.1, watch parties since 0.2.0 (`DROP_URL=http://drop:8000`, `ADMIN_URL`) |
 | `quickshot` | `...-quickshot:0.1.3` | 8000 | `quickshot-data` | Swipe feed over Drop's QuickShot folder. Admin deletes comments |
+| `tv` | `...-tv:0.1.0` | 8000 | `tv-data` (board.json) | TV Board: who's home (`/api/home`), notes, reservations, Drop `TV` folder slideshow at `/tv/screen` |
 | `doom` | `...-doom:0.1.1` | 8000 (busybox httpd) | (none) | Static files: PrBoom+ in WebAssembly runs in the browser. Reads Drop WADs from the browser |
 | `guide` | `...-guide:0.1.2` | 8000 | `guide-data` (~260 MB Wikivoyage) | Offline travel guide (uses LLM) |
 | `gatechange` | `...-gatechange:0.2.0` | 8000 | (none) | Colour/number card game: rooms + long-poll + bots, in memory, on the Rooms SDK |
@@ -79,7 +80,7 @@ matters, and Caddy sorts `redir` before `handle`:
    handle_path /cinema/* { reverse_proxy cinema:8000 }
    ```
    `handle_path` **strips the prefix**, so the app sees `/`. That's why apps must use
-   relative URLs (app contract). Routes exist for darklight, drop, cinema, quickshot, doom, guide, gatechange, passport, wayfarer, couch.
+   relative URLs (app contract). Routes exist for darklight, drop, cinema, quickshot, tv, doom, guide, gatechange, passport, wayfarer, couch.
    **Drop is the exception** (decision 0024): its `reverse_proxy` sends `header_up
    X-Sendfile-Type: X-Accel-Redirect`; Drop checks access and answers a file GET with
    `X-Accel-Redirect: /files/<id>` and no body, and `handle_response @accel` serves

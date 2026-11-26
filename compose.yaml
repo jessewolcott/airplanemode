@@ -139,6 +139,18 @@ services:
     mem_limit: ${QUICKSHOT_MEM:-64m}
     restart: unless-stopped
 
+  # TV Board: who's home, notes and reservations from phones, and a slideshow of Drop's TV
+  # folder, on any screen at /tv/screen.
+  tv:
+    image: ghcr.io/jessewolcott/airplanemode-tv:0.1.0
+    environment:
+      DROP_URL: http://drop:8000
+      ADMIN_URL: http://admin:8000    # who's home, who's who names, the admin
+    volumes:
+      - tv-data:/data               # notes and reservations
+    mem_limit: ${TV_MEM:-64m}
+    restart: unless-stopped
+
   # Doom (PrBoom+ in WebAssembly): static files only, the game runs in the browser. Plays
   # Freedoom, the Layover episode, and .wad files from Drop.
   doom:
@@ -203,5 +215,6 @@ volumes:
   drop-data:
   cinema-data:
   quickshot-data:
+  tv-data:
   guide-data:
   wayfarer-data:

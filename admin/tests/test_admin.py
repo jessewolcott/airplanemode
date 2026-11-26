@@ -415,6 +415,33 @@ def test_lost_and_found():
     main.router.away = set()
 
 
+def test_whos_home():
+    """The TV board's list: named people whose phone is here, unless they opted out."""
+    from fastapi.testclient import TestClient as TC
+    main._leases["at"] = -1e9
+    main.store.data.update(seen={}, people={}, who_links={})
+    main.router.away = set()
+    main.presence.ok = None
+    assert ok(c.get("/api/home")) == {"tracking": False, "people": []}      # can't tell yet
+    pixel, iphone = {"X-Forwarded-For": "192.168.2.163"}, {"X-Forwarded-For": "192.168.2.140"}
+    sam, kim = TC(main.app), TC(main.app)
+    assert ok(sam.put("/api/me", json={"name": "Sam", "avatar": "🦊"}, headers={**H, **pixel}))["on_tv"] is True
+    ok(kim.put("/api/me", json={"name": "Kim", "avatar": "🐙"}, headers={**H, **iphone}))
+    asyncio.run(main.presence.track())
+    home = ok(c.get("/api/home"))
+    assert home == {"tracking": True, "people": [{"name": "Kim", "avatar": "🐙"}, {"name": "Sam", "avatar": "🦊"}]}, home
+    # Kim opts out; renaming later without on_tv keeps the choice
+    assert ok(kim.put("/api/me", json={"name": "Kim", "avatar": "🐙", "on_tv": False}, headers={**H, **iphone}))["on_tv"] is False
+    assert ok(kim.put("/api/me", json={"name": "Kimmy", "avatar": "🐙"}, headers={**H, **iphone}))["on_tv"] is False
+    assert [p["name"] for p in ok(c.get("/api/home"))["people"]] == ["Sam"]
+    # Sam's phone leaves: gone from the list (and the list never says when)
+    main.router.away = {"f8:0f:f9:77:88:99"}
+    asyncio.run(main.presence.track())
+    assert ok(c.get("/api/home"))["people"] == []
+    main.router.away = set()
+    main.store.data.update(seen={}, people={}, who_links={})
+
+
 def test_whos_who():
     from fastapi.testclient import TestClient as TC
     main._leases["at"] = -1e9

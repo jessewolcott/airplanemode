@@ -57,7 +57,7 @@ here, not in separate compose files (decision 0002).
 | `LLM_THREADS` / `LLM_SLOTS` / `LLM_CTX` / `LLM_MEM` | 4 / 2 / 4096 / 3500m | n/a | llm |
 | `LLM_CPUS` / `LLM_CACHE_RAM` | `4-7` / 256 (compose defaults: any core / 256) | n/a | llm (decision 0024) |
 | `PROXY_MEM` / `ADMIN_MEM` | 64m / 96m | 48m / 80m | |
-| `DARKLIGHT_MEM` / `DROP_MEM` / `CINEMA_MEM` / `QUICKSHOT_MEM` / `DOOM_MEM` / `GUIDE_MEM` | 256m / 128m / 64m / 64m / 32m / 256m | n/a / 128m / 64m / 64m / 32m / n/a (no model apps) | apps |
+| `DARKLIGHT_MEM` / `DROP_MEM` / `CINEMA_MEM` / `QUICKSHOT_MEM` / `TV_MEM` / `DOOM_MEM` / `GUIDE_MEM` | 256m / 128m / 64m / 64m / 64m / 32m / 256m | n/a / 128m / 64m / 64m / 64m / 32m / n/a (no model apps) | apps |
 | `GATECHANGE_MEM` / `PASSPORT_MEM` / `WAYFARER_MEM` / `COUCH_MEM` | 64m each | 48m / 48m / 64m / n/a | apps (decision 0016) |
 | `DROP_MAX_BYTES` / `DROP_MAX_FILE` | 4g / 2g | 1g / 512m | Drop |
 | `ROUTER_BACKEND` / `ROUTER_URL` | `openwrt` / `http://host.docker.internal/ubus` | same | admin |

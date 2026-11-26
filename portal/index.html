@@ -47,6 +47,8 @@
   dialog h2 { margin: 0 0 4px; font-size: 1.15rem; }
   dialog p.sub { margin: 0 0 14px; color: var(--dim); font-size: .88rem; }
   dialog label { display: block; font-size: .8rem; color: var(--dim); margin-bottom: 6px; }
+  dialog label.check { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0 0; font-size: .85rem; color: var(--ink); cursor: pointer; }
+  dialog label.check input { margin-top: 2px; }
   dialog input { width: 100%; font: 1rem var(--sans); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
   dialog input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .avatars { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 14px 0 16px; }
@@ -117,6 +119,7 @@
       <label for="whoInput">Name</label>
       <input id="whoInput" maxlength="20" autocomplete="nickname" enterkeyhint="done" required>
       <div class="avatars" id="avatars" role="group" aria-label="Picture"></div>
+      <label class="check"><input type="checkbox" id="whoTv" checked> Show me on the TV's "who's home" while I'm here</label>
       <p class="err" id="whoErr" role="alert"></p>
       <div class="acts">
         <button class="link" id="whoForget" type="button">Forget me on this device</button>
@@ -241,6 +244,7 @@ function openWho() {
   $("#avatars").innerHTML = me.avatars.map(a => `<button type="button" data-a="${esc(a)}" aria-label="${esc(a)}" aria-pressed="false">${esc(a)}</button>`).join("");
   choose(me.known ? me.avatar : me.avatars[Math.floor(Math.random() * me.avatars.length)]);
   $("#whoInput").value = me.known ? me.name : "";
+  $("#whoTv").checked = me.on_tv !== false;
   $("#whoErr").textContent = "";
   $("#whoForget").hidden = !me.known;
   $("#whoDlg").showModal();
@@ -260,7 +264,7 @@ $("#helloSkip").addEventListener("click", () => { try { localStorage.setItem("am
 $("#whoCancel").addEventListener("click", () => $("#whoDlg").close());
 $("#whoForm").addEventListener("submit", async e => {
   e.preventDefault();
-  try { await sendMe("PUT", { name: $("#whoInput").value, avatar: pick }); $("#whoDlg").close(); }
+  try { await sendMe("PUT", { name: $("#whoInput").value, avatar: pick, on_tv: $("#whoTv").checked }); $("#whoDlg").close(); }
   catch (err) { $("#whoErr").textContent = err.message; }
 });
 $("#whoForget").addEventListener("click", async () => {

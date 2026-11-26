@@ -5,11 +5,11 @@ This repo is the **platform**: landing page, admin service (Wi-Fi control + conn
 supervisor), Caddy front door, shared llama.cpp model, hardware profiles, docs. Apps live in
 their own repos (`../airplanemode-darklight`, `../airplanemode-drop`, `../airplanemode-guide`,
 `../airplanemode-cinema`, `../airplanemode-quickshot`, `../airplanemode-doom`, `../airplanemode-gatechange`,
-`../airplanemode-passport`, `../airplanemode-wayfarer`, `../airplanemode-couch`) and plug in as pinned container images. The public homepage +
+`../airplanemode-passport`, `../airplanemode-wayfarer`, `../airplanemode-couch`, `../airplanemode-tv`) and plug in as pinned container images. The public homepage +
 one-line installer is
 `../airplanemode-site`, live at https://airplanemode.xin (GitHub Pages, own domain; decisions
 0011, 0012, 0019).
-Start with `README.md`, then `docs/decisions/` (0001–0026). They explain *why* things are
+Start with `README.md`, then `docs/decisions/` (0001–0027). They explain *why* things are
 the way they are.
 
 ## Environment (Jesse's Windows machine)
@@ -17,7 +17,7 @@ the way they are.
 - All of this project's repos live side by side in **`H:\Github\airplanemode\`**: `airplanemode`
   (this platform repo), `airplanemode-darklight`, `airplanemode-drop`, `airplanemode-guide`,
   `airplanemode-cinema`, `airplanemode-quickshot`, `airplanemode-doom`, `airplanemode-gatechange`,
-  `airplanemode-passport`, `airplanemode-wayfarer`, `airplanemode-couch`, `airplanemode-site`.
+  `airplanemode-passport`, `airplanemode-wayfarer`, `airplanemode-couch`, `airplanemode-tv`, `airplanemode-site`.
   New app repos go there too. H: is **exFAT**, so git needs
   `git config --global --add safe.directory H:/Github/airplanemode/<repo>` for each new repo.
 - Moving folders on H: while VS Code has them open can half-fail: Windows moves some files
@@ -155,7 +155,7 @@ Done and pushed (CI green):
   rooms (long-poll) and bots, trivia pre-built from the guide's ZIM, a therapist simulator
   (therapists as data files, fixed safety check). Played in the dev stack at
   phone size, not on real phones. Released: all four 0.1.0; The Couch 0.2.0 (six therapists:
-  Empath, Pragmatist, Stoic, Ho Chi Minh's ethics, playful Nihilist and Narcissist). The homepage lists all ten apps
+  Empath, Pragmatist, Stoic, Ho Chi Minh's ethics, playful Nihilist and Narcissist). The homepage lists all eleven apps
   (cards copied by hand from `portal/apps.json`; the site's `tools/check_i18n.py` checks them,
   and a card change means updating its six translations too).
 - Review-fix releases (found while writing the `llm/` notes): Wayfarer 0.2.0 (resume after a
@@ -175,7 +175,7 @@ Done and pushed (CI green):
   (looked good); not yet on the R6S.
 - **Current releases** (pinned in `compose.yaml`): Dark Light 0.3.2, Drop 0.3.0, Guide 0.1.2,
   Cinema 0.2.0, QuickShot 0.1.3, Doom 0.1.1, Gate Change 0.2.0, Passport 0.2.0, Wayfarer 0.2.1,
-  The Couch 0.2.4.
+  The Couch 0.2.4, TV Board 0.1.0.
 - Every repo has checked-in `llm/` notes ("how it's built", for LLMs and engineers), kept out of
   the images by `.dockerignore`. The code wins when they disagree; fix the notes.
 - GL.iNet lite profile without the model apps (decision 0017).
@@ -203,6 +203,11 @@ Done and pushed (CI green):
 - Drop read-only for non-admins (decision 0026): only the admin adds, renames, moves, keeps or
   deletes, unless the admin ticks "let everyone" (Drop's `settings.json`); standalone Drop stays
   open. QuickShot's folder setup forwards the admin cookie. Released: Drop 0.3.0, QuickShot 0.1.3.
+- TV Board (decision 0027, `../airplanemode-tv`, `/tv/` and `/tv/screen` on any screen): who's
+  home (admin's `GET /api/home`: named people here now, opt-out `on_tv` in the landing page's
+  name dialog), notes and reservations from phones (anyone posts, poster or admin removes), and
+  a slideshow of Drop's `TV` folder. Checked by tests and in the dev stack at 1080p and phone
+  size; not on a real TV or the R6S's HDMI (the kiosk is the next step). Released: TV Board 0.1.0.
 
 **No real hardware has been tested yet.** The R6S build is in progress. Parts:
 - NanoPi R6S 8 GB with the metal case,

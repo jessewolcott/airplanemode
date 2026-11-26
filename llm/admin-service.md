@@ -5,29 +5,30 @@ A single FastAPI app (~850 lines) plus two helper modules:
 - `admin/vpn.py`: WireGuard config parser. See [vpn-devices-usage.md](vpn-devices-usage.md).
 - `admin/static/index.html`: the admin panel. See [frontends.md](frontends.md).
 
-The module docstring (`main.py:1-40`) lists the endpoints.
+The module docstring (`main.py:1-44`) lists the endpoints.
 
 ## Layout of `main.py`
 
 | Lines | Part |
 |---|---|
-| 60-75 | Config from env vars |
-| 79-86 | `httpx.AsyncClient` + router backend selection |
-| 91 | `router_lock = asyncio.Lock()` |
-| 94-103 | `lifespan`: starts the supervisor task, flushes usage on shutdown. `FastAPI(docs_url=None, redoc_url=None, openapi_url=None)`, so there's no Swagger |
-| 106-108 | `RouterError` → HTTP 400 `{"detail": msg}` |
-| 111-174 | `Store`: `networks.json` |
-| 177-304 | `Supervisor` + `_supervise_forever` (see [supervisor.md](supervisor.md)) |
-| 307-372 | Status cache, `probe()`, `vpn_summary()`, `GET /api/status` |
-| 375-426 | Sessions, login/logout, `require_admin`, `/api/admin/session` |
-| 429-484 | App menu: `/api/apps`, `/api/admin/apps`, `PUT /api/admin/apps/{id}` |
-| 487-612 | Who's who: `/api/me` (decision 0021) |
-| 615-724 | Wi-Fi: wifi overview, scan, upstream join/leave, autojoin, forget, hotspots |
-| 727-749 | Devices + pause |
-| 752-766 | Data use |
-| 769-806 | Home VPN |
-| 809-841 | Mock-only endpoints (`ROUTER_BACKEND=mock`) |
-| 844 | `app.mount("/admin", StaticFiles(directory=static, html=True))` |
+| 69-80 | Config from env vars |
+| 83-90 | `httpx.AsyncClient` + router backend selection |
+| 95 | `router_lock = asyncio.Lock()` |
+| 98-107 | `lifespan`: starts the supervisor task, flushes usage on shutdown. `FastAPI(docs_url=None, redoc_url=None, openapi_url=None)`, so there's no Swagger |
+| 110-112 | `RouterError` → HTTP 400 `{"detail": msg}` |
+| 115-178 | `Store`: `networks.json` |
+| 181-300 | `Supervisor` (see [supervisor.md](supervisor.md)) |
+| 301-362 | Lost & found: `Presence` + `_supervise_forever` (decision 0025) |
+| 365-430 | Status cache, `probe()`, `vpn_summary()`, `GET /api/status` |
+| 433-484 | Sessions, login/logout, `require_admin`, `/api/admin/session` |
+| 487-542 | App menu: `/api/apps`, `/api/admin/apps`, `PUT /api/admin/apps/{id}` |
+| 545-690 | Who's who: `/api/me` (decision 0021), `GET /api/home` (decision 0027) |
+| 693-802 | Wi-Fi: wifi overview, scan, upstream join/leave, autojoin, forget, hotspots |
+| 805-852 | Devices + pause + lost & found list |
+| 855-869 | Data use |
+| 872-909 | Home VPN |
+| 912-949 | Mock-only endpoints (`ROUTER_BACKEND=mock`) |
+| 952 | `app.mount("/admin", StaticFiles(directory=static, html=True))` |
 
 ## Configuration (env vars read by `main.py`)
 
@@ -124,8 +125,9 @@ Pydantic body errors are 422 (the panel shows "Check the fields and try again.")
 |---|---|---|
 | `GET /api/status` | `?refresh=1` bypasses the cache | Internet state for the landing page. See [supervisor.md](supervisor.md#apistatus). Never returns keys or the VPN endpoint. |
 | `GET /api/apps` | none | `installed_apps()` minus `hidden_apps`. Reads `APPS_FILE` on every call. A missing file gives `[]`, a bad file logs and gives `[]`. Only dict entries with a string `id` are kept. |
-| `GET /api/me` | none | Who's who (decision 0021): `{known, id, name, avatar, avatars}`. Sets the `am_who` cookie if missing |
-| `PUT /api/me` | `{name, avatar}`, header `X-AirplaneMode: 1` | `check_name` (whitespace folded, 1–20 chars, no control chars), avatar must be in `AVATARS`. 403 without the header, 400 on bad input |
+| `GET /api/me` | none | Who's who (decision 0021): `{known, id, name, avatar, on_tv, avatars}`. Sets the `am_who` cookie if missing |
+| `PUT /api/me` | `{name, avatar, on_tv?}`, header `X-AirplaneMode: 1` | `check_name` (whitespace folded, 1–20 chars, no control chars), avatar must be in `AVATARS`. `on_tv` omitted = keep (new people: true). 403 without the header, 400 on bad input |
+| `GET /api/home` | none | Who's home for TV Board (decision 0027): `{tracking, people: [{name, avatar}]}`, people linked by `mac:` to a device that `Presence` saw here on the last sample, with `on_tv` not false, deduped, sorted by name. `tracking: false` (and no people) until a station sample worked. Never times or MACs |
 | `DELETE /api/me` | header `X-AirplaneMode: 1` | Forgets the person and every link to them |
 
 ### Who's who (`main.py`, section after the app menu)

@@ -32,3 +32,4 @@ rewriting history.
 | [0024](0024-performance-pass.md) | Performance pass: model on the fast cores, Caddy sends Drop's files, zstd |
 | [0025](0025-lost-and-found.md) | Lost & found: when each device was last on the hotspot (admin only) |
 | [0026](0026-drop-read-only.md) | Drop is read-only for everyone but the admin, unless the admin opens it up |
+| [0027](0027-tv-board.md) | TV Board: who's home, notes, reservations and a photo slideshow on any screen |

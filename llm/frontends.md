@@ -21,8 +21,10 @@ still shows everything. Each app renders as a card link to `a.path`, with a mono
 `loadMe()` fetches `/api/me` once. The header chip (`#who`) shows the avatar and name (only a
 👤 until a name is set). The "Who's this?" card (`#hello`, below the sign-in panels) shows
 while there's no name, unless *Not now* stored `am-who-skip` in `localStorage`. The dialog
-(`#whoDlg`) has the name input, the 24 avatars from the response, Save (`PUT /api/me` with
-`X-AirplaneMode: 1`) and *Forget me on this device* (`DELETE /api/me`). Errors show the
+(`#whoDlg`) has the name input, the 24 avatars from the response, the *Show me on the TV's
+"who's home"* box (`#whoTv`, checked unless `on_tv === false`; decision 0027), Save
+(`PUT /api/me {name, avatar, on_tv}` with `X-AirplaneMode: 1`) and *Forget me on this device*
+(`DELETE /api/me`). Errors show the
 server's `detail`. If the admin service is down the chip stays hidden.
 
 ### Status

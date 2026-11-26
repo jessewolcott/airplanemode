@@ -126,6 +126,9 @@ is offered as is. Doom, for example, declares `"types": ["application/x-doom-wad
   works as is. From the app's backend, call `http://admin:8000/api/me` passing on the
   request's `X-Forwarded-For` header and the `am_who` cookie (check its format first). Don't
   build your own name prompt; link to the landing page (`../`) if the person has no name yet.
+- `GET /api/home` (decision 0027): `{tracking, people: [{name, avatar}]}`, the named people whose
+  phones are on the hotspot right now and who didn't opt out. Names and pictures only, never
+  times or devices. TV Board shows it; don't build anything that records it.
 
 ## Adding the app to the box (in this repo)
 

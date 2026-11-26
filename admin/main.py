@@ -23,6 +23,8 @@ Admin (password, cookie session):
   GET  /api/admin/devices                                   (DHCP leases + paused state + who's who name
                                                              + lost & found: here / since / last_seen)
   DELETE /api/admin/devices/history                         (clear lost & found)
+  GET  /api/home                                            (who's home, for the TV board: named people
+                                                             on the hotspot now who didn't opt out)
   POST /api/admin/devices/{mac}/pause {paused}              (internet off for one device; box apps still work)
   GET  /api/admin/usage       data used per uplink network, and on the current one
   DELETE /api/admin/usage
@@ -557,6 +559,7 @@ _leases = {"at": -1e9, "by_ip": {}}
 class Me(BaseModel):
     name: str
     avatar: str
+    on_tv: bool | None = None   # show me on the TV's "who's home" (None = keep as is; new people: yes)
 
 
 def check_name(name):
@@ -616,8 +619,9 @@ async def _who(request, response):
 def _me(pid):
     p = store.data.get("people", {}).get(pid) if pid else None
     if not p:
-        return {"known": False, "id": None, "name": None, "avatar": None}
-    return {"known": True, "id": _person_id(pid), "name": p["name"], "avatar": p["avatar"]}
+        return {"known": False, "id": None, "name": None, "avatar": None, "on_tv": None}
+    return {"known": True, "id": _person_id(pid), "name": p["name"], "avatar": p["avatar"],
+            "on_tv": p.get("on_tv", True)}
 
 
 def _require_header(request):
@@ -642,7 +646,8 @@ async def put_me(body: Me, request: Request, response: Response):
     pid, keys = await _who(request, response)
     people, links = store.data["people"], store.data["who_links"]
     pid = pid or secrets.token_hex(8)
-    people[pid] = {"name": name, "avatar": body.avatar, "updated": time.time()}
+    on_tv = body.on_tv if body.on_tv is not None else people.get(pid, {}).get("on_tv", True)
+    people[pid] = {"name": name, "avatar": body.avatar, "on_tv": on_tv, "updated": time.time()}
     links.update({k: pid for k in keys})
     if len(people) > MAX_PEOPLE:  # forget the people who haven't changed their name for longest
         for old in sorted(people, key=lambda p: people[p].get("updated", 0))[:len(people) - MAX_PEOPLE]:
@@ -661,6 +666,23 @@ async def delete_me(request: Request, response: Response):
         store.data["who_links"] = {k: v for k, v in store.data["who_links"].items() if v != pid}
         store.save()
     return _me(None)
+
+
+@app.get("/api/home")
+async def home():
+    """Who's home, for the TV board (decision 0027): the who's who name and picture of everyone
+    whose phone is on the hotspot right now, unless they said not to. No times, no MACs, nobody
+    unnamed. `tracking: false` = the box can't tell right now (no station lists)."""
+    if presence.ok is not True:
+        return {"tracking": False, "people": []}
+    links, people = store.data.get("who_links", {}), store.data.get("people", {})
+    out = {}
+    for mac, e in store.data.get("seen", {}).items():
+        pid = links.get(f"mac:{mac}")
+        p = people.get(pid) if e.get("here") and pid else None
+        if p and p.get("on_tv", True):
+            out[pid] = {"name": p["name"], "avatar": p["avatar"]}
+    return {"tracking": True, "people": sorted(out.values(), key=lambda p: p["name"].casefold())}
 
 
 def person_for_mac(mac):

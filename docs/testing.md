@@ -132,6 +132,10 @@ Things only real hardware can prove. Tick them off here as they're verified.
       phone on the hotspot shows *here since*; switch its Wi-Fi off and within a minute it moves
       to *Lost & found* with the right *last seen* time. Check `iwinfo` reports the hotspot
       interfaces as mode *Master* on FriendlyWrt, and whether a locked phone stays listed as here.
+- [ ] **TV Board:** `/tv/screen` on a real TV (a laptop over HDMI, and a smart TV's own browser
+      if it has one): readable from across the room, nothing cut off by overscan, the slideshow
+      smooth, the screen doesn't sleep. Two named phones show under *Home*; one leaving the
+      hotspot drops off within a minute; unticking *Show me on the TV* hides it.
 - [ ] **Sync Watch:** four to six phones in one Cinema watch party on the same film over the
       hotspot. They stay within about a tenth of a second (listen with earbuds side by side);
       pause and skip from any phone; up next moves everyone. Note whether the R6S keeps every

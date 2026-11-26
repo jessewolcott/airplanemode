@@ -15,6 +15,7 @@
 		{ "name": "airplanemode-passport", "path": "../airplanemode-passport" },
 		{ "name": "airplanemode-wayfarer", "path": "../airplanemode-wayfarer" },
 		{ "name": "airplanemode-couch", "path": "../airplanemode-couch" },
+		{ "name": "airplanemode-tv", "path": "../airplanemode-tv" },
 		{ "name": "airplanemode-site", "path": "../airplanemode-site" }
 	],
 	"settings": {
